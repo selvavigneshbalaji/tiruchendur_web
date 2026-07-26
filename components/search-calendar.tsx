@@ -39,17 +39,17 @@ export function SearchCalendar({
   anchorEl,
 }: {
   hotelId?: string
-  initialCheckIn?: string
-  initialCheckOut?: string
+  initialCheckIn?: string | null
+  initialCheckOut?: string | null
   onApply: (checkIn: string | null, checkOut: string | null) => void
   onClose: () => void
   anchorEl?: HTMLElement | null
 }) {
   const today = new Date()
-  const start = keyFromIso(initialCheckIn) ?? { y: today.getFullYear(), m: today.getMonth(), d: today.getDate() }
+  const start = keyFromIso(initialCheckIn ?? null) ?? { y: today.getFullYear(), m: today.getMonth(), d: today.getDate() }
   const [view, setView] = useState({ y: start.y, m: start.m })
-  const [checkIn, setCheckIn] = useState<DateKey | null>(keyFromIso(initialCheckIn))
-  const [checkOut, setCheckOut] = useState<DateKey | null>(keyFromIso(initialCheckOut))
+  const [checkIn, setCheckIn] = useState<DateKey | null>(keyFromIso(initialCheckIn ?? null))
+  const [checkOut, setCheckOut] = useState<DateKey | null>(keyFromIso(initialCheckOut ?? null))
   const [checkInTime, setCheckInTime] = useState<string | null>(null)
   const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
   const [openTimePicker, setOpenTimePicker] = useState<'in' | 'out' | null>(null)

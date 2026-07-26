@@ -13,3 +13,14 @@ __v0_jsx-dev-runtime.ts
 node_modules
 .next/
 .DS_Store
+
+# Local tooling and generated diagnostics
+.playwright-mcp/
+tmp-*.js
+tmp-*.json
+tmp_*
+*.tsbuildinfo
+*.log
+coverage/
+.eslintcache
+.turbo/

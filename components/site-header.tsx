@@ -1,8 +1,8 @@
 "use client"
 
+import Image from "next/image"
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Menu, X, Phone, Sparkles } from "lucide-react"
+import { Menu, X } from "lucide-react"
 
 const navLinks = [
   { label: "Stays", href: "#stays" },
@@ -18,9 +18,15 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <a href="#" className="flex items-center gap-2">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Sparkles className="size-5" />
-          </span>
+          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
+            <Image
+              src="/placeholder-logo.png"
+              alt="Tiruchendur Stays logo"
+              width={48}
+              height={48}
+              className="h-full w-full object-contain"
+            />
+          </div>
           <span className="font-serif text-lg font-semibold leading-none tracking-tight">
             Tiruchendur
             <span className="block text-[11px] font-sans font-medium uppercase tracking-[0.2em] text-muted-foreground">
@@ -40,19 +46,6 @@ export function SiteHeader() {
             </a>
           ))}
         </nav>
-
-        <div className="hidden items-center gap-2 md:flex">
-          <Button
-            variant="ghost"
-            size="lg"
-            nativeButton={false}
-            render={<a href="tel:+910000000000" />}
-          >
-            <Phone className="size-4" />
-            Helpline
-          </Button>
-          <Button size="lg">Sign in</Button>
-        </div>
 
         <button
           className="inline-flex size-10 items-center justify-center rounded-lg text-foreground md:hidden"
@@ -77,14 +70,6 @@ export function SiteHeader() {
                 {l.label}
               </a>
             ))}
-            <div className="mt-2 flex gap-2">
-              <Button variant="outline" size="lg" className="flex-1">
-                Helpline
-              </Button>
-              <Button size="lg" className="flex-1">
-                Sign in
-              </Button>
-            </div>
           </nav>
         </div>
       )}
