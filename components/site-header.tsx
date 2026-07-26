@@ -20,7 +20,7 @@ export function SiteHeader() {
         <a href="#" className="flex items-center gap-2">
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
             <Image
-              src="/placeholder-logo.png"
+              src="/tiruchendur-logo.png"
               alt="Tiruchendur Stays logo"
               width={48}
               height={48}
