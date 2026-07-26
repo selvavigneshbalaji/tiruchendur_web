@@ -27,8 +27,16 @@ export function CtaFooter() {
               size="lg"
               variant="outline"
               className="w-full border-primary-foreground/40 bg-transparent px-8 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:w-auto"
+              nativeButton={false}
+              render={
+                <a
+                  href="https://wa.me/9688104147"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
             >
-              Talk to a local host
+              Talk to host
             </Button>
           </div>
         </div>

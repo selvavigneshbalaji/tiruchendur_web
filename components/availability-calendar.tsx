@@ -1,9 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight, X, Star } from "lucide-react"
-import { getBookedDates, type Hotel } from "@/lib/hotels"
+import { useRouter } from "next/navigation"
+import { ChevronLeft, ChevronRight, X, Star, Eye } from "lucide-react"
+import { getBookedDates, getPriceForDateRange, type Hotel } from "@/lib/hotels"
 import { Button } from "@/components/ui/button"
+import { useSearch } from "@/lib/search-context"
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"]
 const MONTHS = [
@@ -29,14 +31,15 @@ export function AvailabilityCalendar({
   hotel: Hotel
   onClose: () => void
 }) {
+  const router = useRouter()
   const today = startOfToday()
   const [view, setView] = useState({ y: today.y, m: today.m })
   const [checkIn, setCheckIn] = useState<DateKey | null>(null)
   const [checkOut, setCheckOut] = useState<DateKey | null>(null)
 
   const booked = useMemo(
-    () => getBookedDates(hotel.id, view.y, view.m),
-    [hotel.id, view.y, view.m],
+    () => getBookedDates(hotel.id, view.y, view.m, hotel),
+    [hotel.id, view.y, view.m, hotel],
   )
 
   const firstWeekday = new Date(view.y, view.m, 1).getDay()
@@ -52,6 +55,12 @@ export function AvailabilityCalendar({
     })
   }
 
+  const { criteria, setCriteria } = useSearch()
+
+  function formatDateKey(dk: DateKey): string {
+    return `${dk.y}-${String(dk.m + 1).padStart(2, '0')}-${String(dk.d).padStart(2, '0')}`
+  }
+
   function handleSelect(day: number) {
     const picked: DateKey = { y: view.y, m: view.m, d: day }
     const pk = keyOf(picked)
@@ -64,7 +73,16 @@ export function AvailabilityCalendar({
       setCheckIn(picked)
       return
     }
+    // Both dates selected → update global search context (keep calendar open)
     setCheckOut(picked)
+    const checkInStr = formatDateKey(checkIn)
+    const checkOutStr = formatDateKey(picked)
+    setCriteria({
+      ...criteria,
+      checkIn: checkInStr,
+      checkOut: checkOutStr,
+      searched: true,
+    })
   }
 
   const nights = useMemo(() => {
@@ -74,7 +92,7 @@ export function AvailabilityCalendar({
     return Math.round((b.getTime() - a.getTime()) / 86400000)
   }, [checkIn, checkOut])
 
-  const total = nights * hotel.price
+  const total = getPriceForDateRange(hotel, checkIn ? `${checkIn.y}-${String(checkIn.m + 1).padStart(2, '0')}-${String(checkIn.d).padStart(2, '0')}` : '', checkOut ? `${checkOut.y}-${String(checkOut.m + 1).padStart(2, '0')}-${String(checkOut.d).padStart(2, '0')}` : '', criteria.guests)
 
   function dayState(day: number) {
     const k = keyOf({ y: view.y, m: view.m, d: day })
@@ -206,8 +224,20 @@ export function AvailabilityCalendar({
                   <div>No dates selected</div>
                 )}
               </div>
-              <div className="mt-4">
-                <Button onClick={onClose} className="w-full">Close</Button>
+              <div className="mt-4 flex flex-col gap-2">
+                <Button onClick={onClose} className="w-full" variant="outline">Close</Button>
+                {checkIn && checkOut && (
+                  <Button
+                    onClick={() => {
+                      onClose()
+                      router.push(`/properties/${hotel.id}?checkIn=${formatDateKey(checkIn)}&checkOut=${formatDateKey(checkOut)}&guests=${criteria.guests}`)
+                    }}
+                    className="w-full gap-2"
+                  >
+                    <Eye className="size-4" />
+                    View Details
+                  </Button>
+                )}
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { createContext, useContext, useState } from "react"
 export type SearchCriteria = {
   checkIn: string
   checkOut: string
+  destination: string
   guests: number
   rooms: number
   /** Set true once the user runs a search, so the list switches to results mode. */
@@ -14,6 +15,7 @@ export type SearchCriteria = {
 const initialCriteria: SearchCriteria = {
   checkIn: "",
   checkOut: "",
+  destination: "Tiruchendur, Tamil Nadu",
   guests: 2,
   rooms: 1,
   searched: false,
@@ -26,8 +28,8 @@ type SearchContextValue = {
 
 const SearchContext = createContext<SearchContextValue | null>(null)
 
-export function SearchProvider({ children }: { children: React.ReactNode }) {
-  const [criteria, setCriteria] = useState<SearchCriteria>(initialCriteria)
+export function SearchProvider({ children, initialCriteria: providedCriteria }: { children: React.ReactNode; initialCriteria?: Partial<SearchCriteria> }) {
+  const [criteria, setCriteria] = useState<SearchCriteria>({ ...initialCriteria, ...providedCriteria })
   return (
     <SearchContext.Provider value={{ criteria, setCriteria }}>
       {children}

@@ -1,48 +1,80 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { CalendarDays, Users, X } from "lucide-react"
-import { hotels, categories, isAvailableForRange } from "@/lib/hotels"
+import { categories, isAvailableForRange, matchesDestination, type Hotel } from "@/lib/hotels"
 import { HotelCard } from "@/components/hotel-card"
 import { useSearch } from "@/lib/search-context"
+import { formatDateForDisplay } from "@/lib/utils"
 
-function formatDate(value: string) {
-  if (!value) return null
-  return new Date(value + "T00:00:00").toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-  })
-}
-
-export function StaysSection() {
+export function StaysSection({ initialHotels }: { initialHotels: Hotel[] }) {
   const { criteria, setCriteria } = useSearch()
   const [active, setActive] = useState<string>("All stays")
+  // Use SSR initial data for first render (avoids flash of empty state).
+  // SSR has access to APPS_SCRIPT_URL env var, so initialHotels contains
+  // the real data from Google Sheets via Apps Script.
+  // Client-side refreshes call the /api/hotels endpoint (server-side proxy)
+  // to avoid env var unavailability on the client.
+  const [hotels, setHotels] = useState<Hotel[]>(() => (Array.isArray(initialHotels) ? initialHotels : []))
+
+  useEffect(() => {
+    let isMounted = true
+
+    const refreshHotels = async () => {
+      try {
+        const res = await fetch('/api/hotels')
+        if (!res.ok) return
+        const freshHotels: Hotel[] = await res.json()
+        if (isMounted) {
+          setHotels(Array.isArray(freshHotels) ? freshHotels : [])
+        }
+      } catch {
+        // ignore refresh failures and keep the existing data visible
+      }
+    }
+
+    refreshHotels()
+    const intervalId = window.setInterval(refreshHotels, 10000)
+
+    return () => {
+      isMounted = false
+      window.clearInterval(intervalId)
+    }
+  }, [])
 
   // Step 1: apply the search criteria (dates + guests) when a search has run.
   const searchMatched = useMemo(() => {
-    if (!criteria.searched) return hotels
-    return hotels.filter(
-      (h) =>
-        h.maxGuests >= criteria.guests &&
-        isAvailableForRange(h.id, criteria.checkIn, criteria.checkOut),
-    )
-  }, [criteria])
+    const safeHotels = Array.isArray(hotels) ? hotels : []
+    if (!criteria.searched) return safeHotels
+
+    const searchText = criteria.destination.trim().toLowerCase()
+
+    return safeHotels.filter((h) => {
+      const destinationMatches = matchesDestination(h, searchText)
+      const roomMatches = criteria.rooms <= 1 || h.maxGuests >= criteria.rooms * 2
+      const guestMatches = h.maxGuests >= criteria.guests
+      const dateMatches = isAvailableForRange(h.id, criteria.checkIn, criteria.checkOut, h)
+
+      return destinationMatches && roomMatches && guestMatches && dateMatches
+    })
+  }, [criteria.checkIn, criteria.checkOut, criteria.destination, criteria.guests, criteria.rooms, criteria.searched, hotels])
 
   // Step 2: apply the category chips on top of the search results.
   const filtered = useMemo(() => {
-    if (active === "All stays") return searchMatched
+    const safeSearchMatched = Array.isArray(searchMatched) ? searchMatched : []
+    if (active === "All stays") return safeSearchMatched
     if (active === "Near Temple")
-      return searchMatched.filter((h) => h.distance.includes("m "))
+      return safeSearchMatched.filter((h) => h.distance.includes("m "))
     if (active === "Sea view")
-      return searchMatched.filter((h) => h.tags.some((t) => t.toLowerCase().includes("sea")))
-    return searchMatched.filter((h) => h.category === active)
+      return safeSearchMatched.filter((h) => h.tags.some((t) => t.toLowerCase().includes("sea")))
+    return safeSearchMatched.filter((h) => h.category === active)
   }, [active, searchMatched])
 
-  const checkIn = formatDate(criteria.checkIn)
-  const checkOut = formatDate(criteria.checkOut)
+  const checkIn = formatDateForDisplay(criteria.checkIn, false)
+  const checkOut = formatDateForDisplay(criteria.checkOut, false)
 
   function clearSearch() {
-    setCriteria({ checkIn: "", checkOut: "", guests: 2, rooms: 1, searched: false })
+    setCriteria({ checkIn: "", checkOut: "", destination: "Tiruchendur, Tamil Nadu", guests: 2, rooms: 1, searched: false })
     setActive("All stays")
   }
 
@@ -103,7 +135,7 @@ export function StaysSection() {
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((hotel) => (
+        {(filtered ?? []).map((hotel) => (
           <HotelCard key={hotel.id} hotel={hotel} />
         ))}
       </div>

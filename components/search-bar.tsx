@@ -3,31 +3,38 @@
 import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { MapPin, CalendarDays, Search, Users } from "lucide-react"
-import { useSearch } from "@/lib/search-context"
+import { useSearch, type SearchCriteria } from "@/lib/search-context"
 import { GuestsPicker, type Guests } from "@/components/guests-picker"
 import { SearchCalendar } from "@/components/search-calendar"
 
 export function SearchBar() {
-  const { setCriteria } = useSearch()
-  const [destination, setDestination] = useState("Tiruchendur, Tamil Nadu")
-  const [checkIn, setCheckIn] = useState<string | null>(null)
-  const [checkOut, setCheckOut] = useState<string | null>(null)
+  const { setCriteria, criteria: initialCriteria } = useSearch()
+  const [destination, setDestination] = useState(initialCriteria.destination)
+  const [checkIn, setCheckIn] = useState<string | null>(initialCriteria.checkIn || null)
+  const [checkOut, setCheckOut] = useState<string | null>(initialCriteria.checkOut || null)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
   const whenButtonRef = useRef<HTMLButtonElement | null>(null)
-  const [guests, setGuests] = useState<Guests>({ adults: 2, children: 0, infants: 0, pets: 0, rooms: 1 })
+  const [guests, setGuests] = useState<Guests>({ adults: Math.max(1, initialCriteria.guests), children: 0, infants: 0, pets: 0, rooms: initialCriteria.rooms })
+
+  function buildCriteria(overrides: Partial<SearchCriteria> = {}): SearchCriteria {
+    const totalGuests = guests.adults + guests.children
+    const rooms = guests.rooms ?? Math.max(1, Math.ceil(totalGuests / 2))
+
+    return {
+      checkIn: checkIn ?? "",
+      checkOut: checkOut ?? "",
+      destination,
+      guests: totalGuests,
+      rooms,
+      searched: false,
+      ...overrides,
+    }
+  }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    const totalGuests = guests.adults + guests.children
-    const rooms = guests.rooms ?? Math.max(1, Math.ceil(totalGuests / 2))
-    setCriteria({
-      checkIn,
-      checkOut,
-      guests: totalGuests,
-      rooms,
-      searched: true,
-    })
+    setCriteria(buildCriteria({ searched: true }))
     document.getElementById("stays")?.scrollIntoView({ behavior: "smooth" })
   }
 
@@ -49,7 +56,9 @@ export function SearchBar() {
           <div className="w-full relative">
             <button
               type="button"
-              ref={(el) => (whenButtonRef.current = el)}
+              ref={(el) => {
+                whenButtonRef.current = el
+              }}
               onClick={() => {
                 const rect = whenButtonRef.current?.getBoundingClientRect() ?? null
                 setAnchorRect(rect)
@@ -72,8 +81,15 @@ export function SearchBar() {
                 initialCheckOut={checkOut ?? undefined}
                 anchorEl={whenButtonRef.current}
                 onApply={(ci, co) => {
-                  setCheckIn(ci)
-                  setCheckOut(co)
+                  const nextCheckIn = ci ?? null
+                  const nextCheckOut = co ?? null
+                  setCheckIn(nextCheckIn)
+                  setCheckOut(nextCheckOut)
+                  setCriteria(buildCriteria({
+                    checkIn: nextCheckIn ?? "",
+                    checkOut: nextCheckOut ?? "",
+                    searched: true,
+                  }))
                   setCalendarOpen(false)
                 }}
                 onClose={() => setCalendarOpen(false)}
