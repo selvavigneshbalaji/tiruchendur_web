@@ -1,4 +1,3 @@
-import { Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function CtaFooter() {
@@ -46,13 +45,8 @@ export function CtaFooter() {
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                  <Sparkles className="size-5" />
-                </span>
-                <span className="font-serif text-lg font-semibold">
-                  Tiruchendur Stays
-                </span>
+              <div className="flex items-center">
+                <span className="font-serif text-lg font-semibold">Tiruchendur Stays</span>
               </div>
               <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
                 The trusted way to book hotels and homes near the Tiruchendur

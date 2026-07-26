@@ -2,6 +2,7 @@ export const revalidate = 60
 
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import type { Metadata } from 'next'
 import { ArrowLeft, CalendarDays, MapPin, Phone, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getDisplayPrice, getHotels } from "@/lib/hotels"
@@ -11,6 +12,16 @@ import { PropertyGallery } from "@/components/property-gallery"
 export async function generateStaticParams() {
   const hotels = await getHotels()
   return hotels.map((hotel) => ({ id: hotel.id }))
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const hotel = (await getHotels()).find((item) => item.id === id)
+  if (!hotel) return { title: 'Stay in Tiruchendur near Murugan Temple' }
+
+  const title = `${hotel.name} Tiruchendur | ${hotel.category} stay near Murugan Temple`
+  const description = `${hotel.description} From ₹${hotel.price.toLocaleString('en-IN')} per night.`
+  return { title, description, alternates: { canonical: `/properties/${hotel.id}` }, openGraph: { title: `${hotel.name} — ${hotel.category} stay in Tiruchendur`, description, images: [{ url: hotel.image, alt: hotel.name }] } }
 }
 
 export default async function PropertyPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ checkIn?: string; checkOut?: string; guests?: string }> }) {

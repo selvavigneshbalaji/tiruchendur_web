@@ -25,7 +25,7 @@ export function Hero() {
               Sacred coast of Tamil Nadu
             </span>
             <h1 className="mt-4 max-w-2xl text-balance font-serif text-4xl font-semibold leading-[1.05] text-background sm:text-5xl lg:text-6xl">
-              Stay steps away from the Murugan Temple
+              Hotels & Homestays in Tiruchendur near Murugan Temple
             </h1>
             <p className="mt-4 max-w-xl text-pretty text-base text-background/90 sm:text-lg">
               Hand-picked hotels, heritage homes and beachfront resorts in

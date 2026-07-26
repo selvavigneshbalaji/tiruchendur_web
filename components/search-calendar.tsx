@@ -222,23 +222,28 @@ export function SearchCalendar({
   }, [checkInTime, checkOutTime, checkIn, checkOut])
 
   const calendarEl = (
-    <div style={style} className="rounded-2xl border border-border bg-card p-4 shadow-lg">
+    <>
+      {isMobile && <button type="button" aria-label="Close date picker" onClick={onClose} className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm" />}
+      <div style={style} role="dialog" aria-modal="true" aria-label="Select stay dates" className="max-h-[90dvh] overflow-y-auto rounded-t-3xl border border-border bg-card p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-h-none sm:overflow-visible sm:rounded-2xl sm:shadow-lg">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-semibold">Select dates</div>
+        <div>
+          <div className="text-sm font-semibold">Select dates</div>
+          <div className="mt-0.5 text-xs text-muted-foreground">Choose check-in, then check-out</div>
+        </div>
         <div className="flex items-center gap-2">
           <button onClick={onClose} className="rounded-full p-2 hover:bg-accent"><X /></button>
         </div>
       </div>
 
-      <div className="mt-3 flex gap-6">
+      <div className="mt-4 block sm:flex sm:gap-6">
         <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <button onClick={() => shiftMonth(-1)} className="p-2 rounded-full hover:bg-accent"><ChevronLeft /></button>
+          <div className="flex items-center justify-between gap-3">
+            <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month" className="rounded-full p-2 hover:bg-accent"><ChevronLeft className="size-5" /></button>
             <div className="font-medium">{MONTHS[view.m]} {view.y}</div>
-            <button onClick={() => shiftMonth(1)} className="p-2 rounded-full hover:bg-accent"><ChevronRight /></button>
+            <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month" className="rounded-full p-2 hover:bg-accent"><ChevronRight className="size-5" /></button>
           </div>
 
-          <div className="mt-4 grid grid-cols-7 gap-2 text-center">
+          <div className="mt-4 grid grid-cols-7 gap-1.5 text-center sm:gap-2">
             {WEEKDAYS.map((w, i) => (
               <div key={i} className="text-xs font-semibold text-muted-foreground">{w}</div>
             ))}
@@ -254,14 +259,15 @@ export function SearchCalendar({
               const isEdgeEnd = checkOut && key === keyOf(checkOut)
               const inRange = checkIn && checkOut && key > keyOf(checkIn) && key < keyOf(checkOut)
               const base = disabled ? 'text-muted-foreground/40 line-through' : 'hover:bg-accent'
-              const sizeClass = 'h-12 w-12'
+              const sizeClass = 'aspect-square w-full sm:h-12 sm:w-12'
               const rangeClass = isEdgeStart ? 'bg-primary text-primary-foreground rounded-l-full' : isEdgeEnd ? 'bg-primary text-primary-foreground rounded-r-full' : inRange ? 'bg-accent text-accent-foreground' : ''
               return (
                 <button
                   key={day}
                   disabled={disabled}
                   onClick={() => handleSelect(day)}
-                  className={`${sizeClass} rounded-md text-sm font-medium transition-colors ${base} ${rangeClass}`}
+                  aria-label={`${day} ${MONTHS[view.m]}${isBooked ? ' — unavailable' : ''}`}
+                  className={`${sizeClass} rounded-full text-sm font-medium transition-colors ${base} ${rangeClass}`}
                 >
                   {day}
                 </button>
@@ -310,18 +316,12 @@ export function SearchCalendar({
         )}
       </div>
 
-      <div className="w-full mt-4">
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
-          <button onClick={apply} className="flex-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Apply</button>
-        </div>
-      </div>
       {duration && (
-        <div className="mt-2 text-sm font-medium text-foreground">Duration: {duration}</div>
+        <div className="mt-4 rounded-xl bg-accent px-3 py-2 text-sm font-medium text-foreground">Duration: {duration}</div>
       )}
       {/* Time pickers for selected dates */}
-      <div className="w-full mt-4">
-        <div className="flex gap-3">
+      <div className="mt-4 w-full">
+        <div className="flex flex-col gap-3 sm:flex-row">
           {checkIn && (
             <div className="flex-1">
               <div className="text-sm font-medium text-foreground">Check-in time</div>
@@ -352,7 +352,12 @@ export function SearchCalendar({
           )}
         </div>
       </div>
-    </div>
+      <div className="mt-5 flex gap-2 border-t border-border pt-4">
+        <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-border px-4 py-3 text-sm font-medium">Cancel</button>
+        <button type="button" onClick={apply} disabled={!checkIn || !checkOut} className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">Apply dates</button>
+      </div>
+      </div>
+    </>
   )
 
   if (typeof document === 'undefined') return null
