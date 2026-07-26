@@ -85,12 +85,7 @@ function FooterCol({ title, links }: { title: string; links: string[] }) {
       <ul className="mt-3 space-y-2">
         {links.map((l) => (
           <li key={l}>
-            <a
-              href="#"
-              className="text-sm text-muted-foreground transition-colors hover:text-primary"
-            >
-              {l}
-            </a>
+            <span className="text-sm text-muted-foreground">{l}</span>
           </li>
         ))}
       </ul>
