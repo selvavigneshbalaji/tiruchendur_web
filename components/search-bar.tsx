@@ -102,8 +102,8 @@ export function SearchBar() {
             <GuestsPicker value={guests} onChange={(next) => setGuests(next)} />
           </div>
         </Field>
-        <div className="flex items-stretch p-1.5">
-          <Button type="submit" size="lg" className="h-full w-full gap-2 rounded-2xl px-6 text-sm sm:w-auto">
+        <div className="flex pt-1 sm:items-stretch sm:p-1.5">
+          <Button type="submit" size="lg" className="h-11 w-full gap-2 rounded-xl px-4 text-sm sm:h-full sm:w-auto sm:rounded-2xl sm:px-6">
             <Search className="size-4" />
             Search stays
           </Button>

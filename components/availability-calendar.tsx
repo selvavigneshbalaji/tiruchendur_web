@@ -163,9 +163,9 @@ export function AvailabilityCalendar({
             </div>
           </div>
 
-          <div className="flex gap-6 overflow-x-auto p-6">
-            <div className="flex-1 min-w-[320px]">
-              <div className="mt-6 grid grid-cols-7 gap-3 text-center">
+          <div className="flex flex-col gap-5 py-5 sm:flex-row sm:gap-6 sm:p-6">
+            <div className="min-w-0 flex-1 sm:min-w-[320px]">
+              <div className="mt-6 grid grid-cols-7 gap-1.5 text-center sm:gap-3">
                 {WEEKDAYS.map((w, i) => (
                   <div
                     key={i}
@@ -190,7 +190,7 @@ export function AvailabilityCalendar({
                       onClick={() => handleSelect(day)}
                       aria-label={`${day} ${MONTHS[view.m]}${isBooked ? " — booked" : ""}`}
                       className={
-                        `relative flex aspect-square items-center justify-center rounded-md text-sm font-medium transition-colors ` +
+                        `relative flex aspect-square items-center justify-center rounded-full text-sm font-medium transition-colors ` +
                         (isEdge
                           ? "bg-primary text-primary-foreground"
                           : inRange
@@ -207,7 +207,7 @@ export function AvailabilityCalendar({
               </div>
             </div>
 
-            <div className="w-80 shrink-0 rounded-2xl border border-border bg-card p-4">
+            <div className="w-full shrink-0 rounded-2xl border border-border bg-card p-4 sm:w-80">
               <div className="text-sm font-semibold text-foreground">Your selection</div>
               <div className="mt-3 text-xs text-muted-foreground">
                 {checkIn && checkOut ? (
@@ -221,7 +221,7 @@ export function AvailabilityCalendar({
                     <div className="mt-2">{nights} nights · ₹{total.toLocaleString("en-IN")}</div>
                   </>
                 ) : (
-                  <div>No dates selected</div>
+                  <div>Select a check-in and check-out date to see your total price.</div>
                 )}
               </div>
               <div className="mt-4 flex flex-col gap-2">
