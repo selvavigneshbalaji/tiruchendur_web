@@ -3,7 +3,7 @@ export const revalidate = 60
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from 'next'
-import { ArrowLeft, CalendarDays, MapPin, Phone, Star } from "lucide-react"
+import { ArrowLeft, CalendarDays, ExternalLink, MapPin, Phone, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getDisplayPrice, getHotels } from "@/lib/hotels"
 import { BookingForm } from "@/components/booking-form"
@@ -57,10 +57,23 @@ export default async function PropertyPage({ params, searchParams }: { params: P
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h1 className="font-serif text-3xl font-semibold text-foreground">{hotel.name}</h1>
-                    <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="size-4 text-primary" />
-                      {hotel.area} · {hotel.distance}
-                    </p>
+                    <div className="mt-2 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:gap-4">
+                      <p className="flex items-center gap-2">
+                        <MapPin className="size-4 text-primary" />
+                        {hotel.area} · {hotel.distance}
+                      </p>
+                      {hotel.googleMapsUrl ? (
+                        <a
+                          href={hotel.googleMapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
+                        >
+                          <ExternalLink className="size-4" />
+                          View on Google Maps
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
                     {hotel.category}

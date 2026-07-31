@@ -18,7 +18,7 @@ export function CtaFooter() {
               variant="secondary"
               className="w-full px-8 sm:w-auto"
               nativeButton={false}
-              render={<a href="#stays" />}
+              render={<a href="/#stays" />}
             >
               Browse all stays
             </Button>
@@ -83,9 +83,9 @@ function FooterCol({ title, links }: { title: string; links: string[] }) {
     <div>
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       <ul className="mt-3 space-y-2">
-        {links.map((l) => (
-          <li key={l}>
-            <span className="text-sm text-muted-foreground">{l}</span>
+        {links.map((link) => (
+          <li key={link}>
+            <span className="text-sm text-muted-foreground">{link}</span>
           </li>
         ))}
       </ul>

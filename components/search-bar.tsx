@@ -7,6 +7,16 @@ import { useSearch, type SearchCriteria } from "@/lib/search-context"
 import { GuestsPicker, type Guests } from "@/components/guests-picker"
 import { SearchCalendar } from "@/components/search-calendar"
 
+function formatSelectedDate(dateStr: string) {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
 export function SearchBar() {
   const { setCriteria, criteria: initialCriteria } = useSearch()
   const [destination, setDestination] = useState(initialCriteria.destination)
@@ -69,9 +79,13 @@ export function SearchBar() {
               aria-label="Select dates"
             >
               <span className="inline-block min-w-0 truncate">
-                {checkIn && checkOut
-                  ? `${new Date(checkIn).toLocaleDateString()} – ${new Date(checkOut).toLocaleDateString()}`
-                  : 'Add dates'}
+                {checkIn && checkOut ? (
+                  `${formatSelectedDate(checkIn)} – ${formatSelectedDate(checkOut)}`
+                ) : checkIn ? (
+                  `Check-in: ${formatSelectedDate(checkIn)}`
+                ) : (
+                  'Add dates'
+                )}
               </span>
             </button>
             {calendarOpen && (

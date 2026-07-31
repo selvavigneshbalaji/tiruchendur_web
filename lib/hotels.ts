@@ -22,6 +22,7 @@ export type Hotel = {
   description: string
   ownerName: string
   ownerContact: string
+  googleMapsUrl?: string
   rules: string[]
   availability?: Record<string, { available: boolean; price?: number }>
 }
@@ -373,6 +374,19 @@ export function toHotel(row: Record<string, unknown>): Hotel {
   const ownerContactValue = getValue(['ownerContact', 'owner_contact', 'hostContact', 'host_contact'])
   const ownerContact = ownerContactValue ? String(ownerContactValue) : 'Contact host'
 
+  const googleMapsValue = getValue([
+    'googleMaps',
+    'googleMapsUrl',
+    'mapUrl',
+    'mapsUrl',
+    'google_map',
+    'google_map_url',
+    'maps_link',
+    'googleMapsLink',
+    'mapsLink',
+  ])
+  const googleMapsUrl = typeof googleMapsValue === 'string' && googleMapsValue.trim() ? String(googleMapsValue).trim() : ''
+
   const rule1Value = getValue(['rule1', 'Rule1'])
   const rule2Value = getValue(['rule2', 'Rule2'])
   const rules = [rule1Value ? String(rule1Value) : 'Flexible check-in', rule2Value ? String(rule2Value) : 'Comfortable stay'].filter(Boolean)
@@ -404,6 +418,7 @@ export function toHotel(row: Record<string, unknown>): Hotel {
     description,
     ownerName,
     ownerContact,
+    googleMapsUrl: typeof googleMapsUrl === 'string' && googleMapsUrl ? googleMapsUrl : undefined,
     rules,
     availability,
   }
