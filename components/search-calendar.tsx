@@ -77,8 +77,15 @@ export function SearchCalendar({
     })
   }
 
-  function handleSelect(day: number) {
-    const picked: DateKey = { y: view.y, m: view.m, d: day }
+  function shiftBothMonths(dir: number) {
+    setView((v) => {
+      const next = new Date(v.y, v.m + dir, 1)
+      return { y: next.getFullYear(), m: next.getMonth() }
+    })
+  }
+
+  function handleSelect(day: number, year = view.y, month = view.m) {
+    const picked: DateKey = { y: year, m: month, d: day }
     const pk = keyOf(picked)
     if (!checkIn || (checkIn && checkOut)) {
       setCheckIn(picked)
@@ -137,6 +144,16 @@ export function SearchCalendar({
   function timeToMinutes(t: string) {
     const [hh, mm] = t.split(':').map(Number)
     return hh * 60 + mm
+  }
+
+  function formatDate(k: DateKey) {
+    const date = new Date(k.y, k.m, k.d)
+    return date.toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
   }
 
   function ensureCheckoutAfterCheckin() {
@@ -238,9 +255,9 @@ export function SearchCalendar({
       <div className="mt-4 block sm:flex sm:gap-6">
         <div className="flex-1">
           <div className="flex items-center justify-between gap-3">
-            <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month" className="rounded-full p-2 hover:bg-accent"><ChevronLeft className="size-5" /></button>
+            <button type="button" onClick={() => shiftBothMonths(-1)} aria-label="Previous month" className="rounded-full p-2 hover:bg-accent"><ChevronLeft className="size-5" /></button>
             <div className="font-medium">{MONTHS[view.m]} {view.y}</div>
-            <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month" className="rounded-full p-2 hover:bg-accent"><ChevronRight className="size-5" /></button>
+            <button type="button" onClick={() => shiftBothMonths(1)} aria-label="Next month" className="rounded-full p-2 hover:bg-accent"><ChevronRight className="size-5" /></button>
           </div>
 
           <div className="mt-4 grid grid-cols-7 gap-1.5 text-center sm:gap-2">
@@ -278,8 +295,10 @@ export function SearchCalendar({
 
         {!isMobile && (
           <div className="flex-1 min-w-[320px]">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <button type="button" onClick={() => shiftBothMonths(-1)} aria-label="Previous month" className="rounded-full p-2 hover:bg-accent"><ChevronLeft className="size-5" /></button>
               <div className="font-medium">{MONTHS[nextView.m]} {nextView.y}</div>
+              <button type="button" onClick={() => shiftBothMonths(1)} aria-label="Next month" className="rounded-full p-2 hover:bg-accent"><ChevronRight className="size-5" /></button>
             </div>
 
             <div className="mt-4 grid grid-cols-7 gap-2 text-center">
@@ -304,7 +323,7 @@ export function SearchCalendar({
                   <button
                     key={`n-${day}`}
                     disabled={disabled}
-                    onClick={() => { setView(nextView); handleSelect(day) }}
+                    onClick={() => handleSelect(day, nextView.y, nextView.m)}
                     className={`${sizeClass} rounded-md text-sm font-medium transition-colors ${base} ${rangeClass}`}
                   >
                     {day}
@@ -321,10 +340,12 @@ export function SearchCalendar({
       )}
       {/* Time pickers for selected dates */}
       <div className="mt-4 w-full">
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="grid gap-4 sm:grid-cols-2">
           {checkIn && (
-            <div className="flex-1">
-              <div className="text-sm font-medium text-foreground">Check-in time</div>
+            <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+              <div className="text-sm font-semibold text-foreground">Check-in</div>
+              <div className="mt-1 text-sm text-muted-foreground">{formatDate(checkIn)}</div>
+              <div className="mt-3 text-sm font-medium text-foreground">Check-in time</div>
               <select
                 value={checkInTime ?? ''}
                 onChange={(e) => { setCheckInTime(e.target.value); setOpenTimePicker(null) }}
@@ -337,8 +358,10 @@ export function SearchCalendar({
             </div>
           )}
           {checkOut && (
-            <div className="flex-1">
-              <div className="text-sm font-medium text-foreground">Check-out time</div>
+            <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+              <div className="text-sm font-semibold text-foreground">Check-out</div>
+              <div className="mt-1 text-sm text-muted-foreground">{formatDate(checkOut)}</div>
+              <div className="mt-3 text-sm font-medium text-foreground">Check-out time</div>
               <select
                 value={checkOutTime ?? ''}
                 onChange={(e) => { setCheckOutTime(e.target.value); setOpenTimePicker(null) }}

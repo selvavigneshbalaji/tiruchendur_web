@@ -91,6 +91,18 @@ describe('parseHotelsPayload', () => {
     assert.equal(hotel.availability?.['2026-07-21']?.available, true)
     assert.equal(hotel.availability?.['2026-07-21']?.price, 3000)
   })
+
+  it('preserves Google Maps URLs from sheet payloads', () => {
+    const payload = JSON.stringify({
+      hotels: [{ id: 1, name: 'Test Hotel', area: 'Tiruchendur', price: 3000, googleMapsUrl: 'https://maps.google.com/?q=Tiruchendur' }],
+      availability: { hotel1: [{ dates: '2026-07-21', availability: 'yes', price: 3000 }] },
+    })
+
+    const parsed = parseHotelsPayload(payload)
+    const hotel = toHotel(parsed[0])
+
+    assert.equal(hotel.googleMapsUrl, 'https://maps.google.com/?q=Tiruchendur')
+  })
 })
 
 describe('getPriceForDate', () => {
