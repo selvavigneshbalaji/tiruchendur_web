@@ -156,6 +156,16 @@ export function SearchCalendar({
     })
   }
 
+  function getSubheading() {
+    if (!checkIn) {
+      return 'Choose check-in, then check-out'
+    }
+    if (checkIn && !checkOut) {
+      return 'Check-in selected. Now choose a check-out date.'
+    }
+    return 'Choose check-in, then check-out'
+  }
+
   function ensureCheckoutAfterCheckin() {
     if (!checkIn || !checkOut || !checkInTime || !checkOutTime) return
     const sameDay = keyOf(checkIn) === keyOf(checkOut)
@@ -245,7 +255,7 @@ export function SearchCalendar({
       <div className="flex items-center justify-between">
         <div>
           <div className="text-sm font-semibold">Select dates</div>
-          <div className="mt-0.5 text-xs text-muted-foreground">Choose check-in, then check-out</div>
+          <div className="mt-0.5 text-xs text-muted-foreground">{getSubheading()}</div>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={onClose} className="rounded-full p-2 hover:bg-accent"><X /></button>
@@ -357,19 +367,26 @@ export function SearchCalendar({
               </select>
             </div>
           )}
-          {checkOut && (
+          {checkIn && (
             <div className="rounded-2xl border border-border bg-secondary/50 p-4">
               <div className="text-sm font-semibold text-foreground">Check-out</div>
-              <div className="mt-1 text-sm text-muted-foreground">{formatDate(checkOut)}</div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                {checkOut ? formatDate(checkOut) : 'Select a checkout date'}
+              </div>
               <div className="mt-3 text-sm font-medium text-foreground">Check-out time</div>
               <select
                 value={checkOutTime ?? ''}
                 onChange={(e) => { setCheckOutTime(e.target.value); setOpenTimePicker(null) }}
+                disabled={!checkOut}
                 className="mt-1 w-full rounded-md border border-border bg-card text-foreground px-3 py-2 text-sm"
               >
-                {(checkIn && checkOut && keyOf(checkIn) === keyOf(checkOut) ? timeOptionsRange(5, 18) : timeOptions()).map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
+                {checkOut ? (
+                  (checkIn && keyOf(checkIn) === keyOf(checkOut) ? timeOptionsRange(5, 18) : timeOptions()).map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))
+                ) : (
+                  <option value="">Choose checkout date</option>
+                )}
               </select>
             </div>
           )}
