@@ -41,6 +41,60 @@ const nextConfig = {
       },
     ]
   },
+  async redirects() {
+    return [
+      {
+        source: '/hotel-in-tiruchendur',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/rooms-in-tiruchendur',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/hotel-near-murugan-temple',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/budget-hotel-tiruchendur',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/family-rooms-tiruchendur',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/dormitory-in-tiruchendur',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/ac-rooms-in-tiruchendur',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/hotel-near-tiruchendur-beach',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/stay-in-tiruchendur',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/best-hotel-in-tiruchendur',
+        destination: '/',
+        permanent: false,
+      },
+    ]
+  },
 }
 
 export default withSentryConfig(nextConfig, {
