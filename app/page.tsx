@@ -4,6 +4,7 @@ import { StaysSection } from "@/components/stays-section"
 import { WhyUs } from "@/components/why-us"
 import { TempleGuide } from "@/components/temple-guide"
 import { Testimonials } from "@/components/testimonials"
+import { BlogTeaser } from "@/components/blog-teaser"
 import { CtaFooter } from "@/components/cta-footer"
 import { SearchProvider } from "@/lib/search-context"
 import { getHotels } from "@/lib/hotels"
@@ -45,6 +46,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
         <Hero />
         <StaysSection initialHotels={hotels} />
       </SearchProvider>
+      <BlogTeaser />
       <WhyUs />
       <TempleGuide />
       <Testimonials />

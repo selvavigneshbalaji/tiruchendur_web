@@ -1,7 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { articles, type Article } from '../articles'
+import { articles } from '../blog/articles'
+
+export function generateStaticParams() {
+  return Object.keys(articles).map((slug) => ({ slug }))
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -22,11 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-export function generateStaticParams() {
-  return Object.keys(articles).map((slug) => ({ slug }))
-}
-
-export default async function BlogArticle({ params }: { params: Promise<{ slug: string }> }) {
+export default async function BlogAliasPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const article = articles[slug]
   if (!article) notFound()
@@ -35,7 +35,10 @@ export default async function BlogArticle({ params }: { params: Promise<{ slug: 
     <main className="min-h-screen bg-background px-4 py-12 sm:px-6 lg:py-20">
       <article className="mx-auto max-w-3xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center text-sm font-medium text-primary hover:underline">← Browse Tiruchendur stays</Link>
+          <div className="flex items-center gap-4">
+            <Link href="/blog" className="inline-flex items-center text-sm font-medium text-primary hover:underline">← Browse the blog</Link>
+            <Link href="/" className="inline-flex items-center text-sm font-medium text-primary hover:underline">Home</Link>
+          </div>
           <Link href="/" className="inline-flex rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Browse stays</Link>
         </div>
         <p className="mt-10 text-sm font-semibold uppercase tracking-widest text-primary">Tiruchendur travel guide</p>
@@ -45,7 +48,7 @@ export default async function BlogArticle({ params }: { params: Promise<{ slug: 
           {article.sections.map((section) => (
             <section key={section.heading}>
               <h2 className="font-serif text-2xl font-semibold text-foreground">{section.heading}</h2>
-              {section.paragraphs.map((paragraph) => (
+              {section.paragraphs.map((paragraph: string) => (
                 <p key={paragraph} className="mt-4 leading-7 text-muted-foreground">{paragraph}</p>
               ))}
             </section>
