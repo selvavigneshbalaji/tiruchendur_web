@@ -14,9 +14,11 @@ export type Guests = {
 export function GuestsPicker({
   value,
   onChange,
+  maxGuests,
 }: {
   value: Guests
   onChange: (next: Guests) => void
+  maxGuests?: number
 }) {
   const [open, setOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -53,6 +55,7 @@ export function GuestsPicker({
   }, [])
 
   function inc(field: keyof Guests) {
+    if ((field === "adults" || field === "children") && maxGuests && value.adults + value.children >= maxGuests) return
     const next = { ...value, [field]: (value[field] as number) + 1 }
     onChange(next)
   }
@@ -94,9 +97,9 @@ export function GuestsPicker({
             </div>
             <button type="button" onClick={() => setOpen(false)} className="rounded-full p-2 text-muted-foreground hover:bg-accent" aria-label="Close guest picker">×</button>
           </div>
-          <Counter label="Adults" sub="Ages 13 or above" value={value.adults} onInc={() => inc("adults")} onDec={() => dec("adults")} />
+          <Counter label="Adults" sub="Ages 13 or above" value={value.adults} onInc={() => inc("adults")} onDec={() => dec("adults")} disableIncrement={Boolean(maxGuests && value.adults + value.children >= maxGuests)} />
           <div className="my-3 h-px bg-border" />
-          <Counter label="Children" sub="Ages 2–12" value={value.children} onInc={() => inc("children")} onDec={() => dec("children")} />
+          <Counter label="Children" sub="Ages 2–12" value={value.children} onInc={() => inc("children")} onDec={() => dec("children")} disableIncrement={Boolean(maxGuests && value.adults + value.children >= maxGuests)} />
           <div className="my-3 h-px bg-border" />
           <Counter label="Rooms" sub="Number of rooms" value={value.rooms} onInc={() => inc("rooms")} onDec={() => dec("rooms")} />
           <div className="my-3 h-px bg-border" />
@@ -116,7 +119,7 @@ export function GuestsPicker({
   )
 }
 
-function Counter({ label, sub, value, onInc, onDec }: { label: string; sub: string; value: number; onInc: () => void; onDec: () => void }) {
+function Counter({ label, sub, value, onInc, onDec, disableIncrement = false }: { label: string; sub: string; value: number; onInc: () => void; onDec: () => void; disableIncrement?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -126,7 +129,7 @@ function Counter({ label, sub, value, onInc, onDec }: { label: string; sub: stri
       <div className="flex items-center gap-3">
         <button type="button" onClick={onDec} className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-lg text-foreground disabled:opacity-40 sm:h-8 sm:w-8 sm:text-base" disabled={value === 0}>−</button>
         <div className="text-sm text-foreground">{value}</div>
-        <button type="button" onClick={onInc} className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-lg text-foreground sm:h-8 sm:w-8 sm:text-base">+</button>
+        <button type="button" onClick={onInc} disabled={disableIncrement} className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-lg text-foreground disabled:opacity-40 sm:h-8 sm:w-8 sm:text-base">+</button>
       </div>
     </div>
   )

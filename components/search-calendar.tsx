@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
-import { getBookedDates } from "@/lib/hotels"
+import { getBookedDates, type Hotel } from "@/lib/hotels"
 
 type DateKey = { y: number; m: number; d: number }
 
@@ -32,6 +32,7 @@ function keyFromIso(iso: string | null): DateKey | null {
 
 export function SearchCalendar({
   hotelId,
+  hotel,
   initialCheckIn,
   initialCheckOut,
   onApply,
@@ -39,6 +40,7 @@ export function SearchCalendar({
   anchorEl,
 }: {
   hotelId?: string
+  hotel?: Hotel
   initialCheckIn?: string | null
   initialCheckOut?: string | null
   onApply: (checkIn: string | null, checkOut: string | null) => void
@@ -56,8 +58,8 @@ export function SearchCalendar({
 
   const booked = useMemo(() => {
     if (!hotelId) return new Set<number>()
-    return getBookedDates(hotelId, view.y, view.m)
-  }, [hotelId, view.y, view.m])
+    return getBookedDates(hotelId, view.y, view.m, hotel)
+  }, [hotelId, hotel, view.y, view.m])
 
   const todayKey = keyOf({ y: today.getFullYear(), m: today.getMonth(), d: today.getDate() })
 
@@ -67,8 +69,8 @@ export function SearchCalendar({
 
   const bookedNext = useMemo(() => {
     if (!hotelId) return new Set<number>()
-    return getBookedDates(hotelId, nextView.y, nextView.m)
-  }, [hotelId, nextView.y, nextView.m])
+    return getBookedDates(hotelId, nextView.y, nextView.m, hotel)
+  }, [hotelId, hotel, nextView.y, nextView.m])
 
   function shiftMonth(dir: number) {
     setView((v) => {

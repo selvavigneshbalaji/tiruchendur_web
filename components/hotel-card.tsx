@@ -62,7 +62,7 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
         className="group flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
         onClick={() => {
           if (hasDates && isAvailable) {
-            router.push(`/properties/${hotel.id}`)
+            router.push(propertyHref)
           }
         }}
       >

@@ -25,8 +25,11 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title: 'Tiruchendur Stays | Hotels near Murugan Temple', description: 'Book hotels and homestays near Tiruchendur Murugan Temple. Best price guaranteed.', images: ['/images/temple-hero.png'] },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 } },
   icons: {
-    icon: [{ url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' }, { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' }, { url: '/icon.svg', type: 'image/svg+xml' }],
-    apple: '/apple-icon.png',
+    // The logo is deliberately used for every icon variant. The previous files
+    // were template "v0" icons, which Google was showing in search results.
+    icon: [{ url: '/favicon.png', type: 'image/png', sizes: '192x192' }],
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
   },
 }
 
