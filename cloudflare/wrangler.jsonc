@@ -7,7 +7,7 @@
     {
       "binding": "DB",
       "database_name": "tiruchendur-stays",
-      "database_id": "REPLACE_AFTER_CREATING_D1"
+      "database_id": "0ef912b9-c4f6-44dd-b572-af631ccfad04"
     }
   ],
   "r2_buckets": [
@@ -19,5 +19,9 @@
   "vars": {
     "APP_ORIGIN": "https://www.tiruchendurstay.in",
     "COOKIE_DOMAIN": ".tiruchendurstay.in"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
   }
 }
