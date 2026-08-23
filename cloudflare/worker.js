@@ -23,13 +23,17 @@ async function sha256(value) {
 
 async function passwordHash(password, salt) {
   const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"])
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: encoder.encode(salt), iterations: 310000 }, key, 256)
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: encoder.encode(salt), iterations: 100000 }, key, 256)
   return [...new Uint8Array(bits)].map((value) => value.toString(16).padStart(2, "0")).join("")
 }
 
 async function safeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string" || left.length !== right.length) return false
-  return crypto.subtle.timingSafeEqual(encoder.encode(left), encoder.encode(right))
+  const leftBytes = encoder.encode(left)
+  const rightBytes = encoder.encode(right)
+  let difference = 0
+  for (let index = 0; index < leftBytes.length; index += 1) difference |= leftBytes[index] ^ rightBytes[index]
+  return difference === 0
 }
 
 function parseCookies(request) {
