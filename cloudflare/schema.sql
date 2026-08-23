@@ -41,6 +41,32 @@ CREATE TABLE IF NOT EXISTS hotel_images (
   FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS rooms (
+  id TEXT PRIMARY KEY,
+  hotel_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  max_guests INTEGER NOT NULL DEFAULT 1 CHECK (max_guests > 0),
+  base_price INTEGER NOT NULL CHECK (base_price >= 0),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS room_prices (
+  room_id TEXT NOT NULL,
+  stay_date TEXT NOT NULL,
+  price INTEGER NOT NULL CHECK (price >= 0),
+  available INTEGER NOT NULL DEFAULT 1 CHECK (available IN (0, 1)),
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (room_id, stay_date),
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS rooms_by_hotel ON rooms(hotel_id);
+CREATE INDEX IF NOT EXISTS room_prices_by_date ON room_prices(stay_date);
+
 CREATE TABLE IF NOT EXISTS availability (
   hotel_id TEXT NOT NULL,
   stay_date TEXT NOT NULL,

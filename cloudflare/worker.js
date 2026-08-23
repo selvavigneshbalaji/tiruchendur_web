@@ -75,6 +75,17 @@ function hotelPayload(hotel) {
   }
 }
 
+function roomPayload(room) {
+  return {
+    id: room.id, hotelId: room.hotel_id, name: room.name, description: room.description,
+    maxGuests: room.max_guests, basePrice: room.base_price, status: room.status,
+  }
+}
+
+function imagePayload(image) {
+  return { id: image.id, hotelId: image.hotel_id, altText: image.alt_text, position: image.position, url: `/api/portal/images/${image.id}` }
+}
+
 async function handleLogin(request, env, headers) {
   const { username, password } = await request.json()
   if (!username || !password) return json({ error: "Username and password are required." }, 400, headers)
@@ -162,6 +173,104 @@ async function handleUpdateOwnerHotel(request, user, env, headers) {
   return json({ hotel: { ...hotelPayload(hotel), ...next } }, 200, headers)
 }
 
+async function hotelForUser(user, env, hotelId) {
+  const id = user.role === "admin" ? hotelId : user.hotel_id
+  return id ? env.DB.prepare("SELECT * FROM hotels WHERE id = ?").bind(id).first() : null
+}
+
+async function handleListRooms(user, request, env, headers) {
+  const hotel = await hotelForUser(user, env, new URL(request.url).searchParams.get("hotelId"))
+  if (!hotel) return json({ error: "Property not found." }, 404, headers)
+  const { results } = await env.DB.prepare("SELECT * FROM rooms WHERE hotel_id = ? ORDER BY created_at DESC").bind(hotel.id).all()
+  return json({ rooms: results.map(roomPayload) }, 200, headers)
+}
+
+async function handleCreateRoom(request, user, env, headers) {
+  const body = await request.json()
+  const hotel = await hotelForUser(user, env, body.hotelId)
+  if (!hotel) return json({ error: "Property not found." }, 404, headers)
+  const name = String(body.name || "").trim()
+  const maxGuests = Math.floor(Number(body.maxGuests))
+  const basePrice = Math.floor(Number(body.basePrice))
+  if (!name || maxGuests < 1 || basePrice < 0) return json({ error: "Room name, guest capacity, and a valid price are required." }, 400, headers)
+  const room = { id: uuid(), hotel_id: hotel.id, name, description: String(body.description || "").trim(), max_guests: maxGuests, base_price: basePrice, status: body.status === "inactive" ? "inactive" : "active" }
+  await env.DB.prepare("INSERT INTO rooms (id, hotel_id, name, description, max_guests, base_price, status) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(room.id, room.hotel_id, room.name, room.description, room.max_guests, room.base_price, room.status).run()
+  return json({ room: roomPayload(room) }, 201, headers)
+}
+
+async function handleUpdateRoom(request, user, env, headers, roomId) {
+  const body = await request.json()
+  const room = await env.DB.prepare("SELECT rooms.* FROM rooms JOIN hotels ON hotels.id = rooms.hotel_id WHERE rooms.id = ? AND (? = 'admin' OR hotels.id = ?)").bind(roomId, user.role, user.hotel_id).first()
+  if (!room) return json({ error: "Room not found." }, 404, headers)
+  const next = {
+    name: String(body.name ?? room.name).trim(), description: String(body.description ?? room.description).trim(),
+    maxGuests: Math.max(1, Math.floor(Number(body.maxGuests ?? room.max_guests))), basePrice: Math.max(0, Math.floor(Number(body.basePrice ?? room.base_price))),
+    status: body.status === "inactive" ? "inactive" : "active",
+  }
+  await env.DB.prepare("UPDATE rooms SET name = ?, description = ?, max_guests = ?, base_price = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(next.name, next.description, next.maxGuests, next.basePrice, next.status, roomId).run()
+  return json({ room: { ...roomPayload(room), ...next } }, 200, headers)
+}
+
+async function handleRoomPrice(request, user, env, headers, roomId) {
+  const body = await request.json()
+  const room = await env.DB.prepare("SELECT rooms.* FROM rooms JOIN hotels ON hotels.id = rooms.hotel_id WHERE rooms.id = ? AND (? = 'admin' OR hotels.id = ?)").bind(roomId, user.role, user.hotel_id).first()
+  if (!room) return json({ error: "Room not found." }, 404, headers)
+  const date = String(body.date || "")
+  const price = Math.floor(Number(body.price))
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || price < 0) return json({ error: "A valid date and non-negative price are required." }, 400, headers)
+  await env.DB.prepare("INSERT INTO room_prices (room_id, stay_date, price, available) VALUES (?, ?, ?, ?) ON CONFLICT(room_id, stay_date) DO UPDATE SET price = excluded.price, available = excluded.available, updated_at = CURRENT_TIMESTAMP").bind(roomId, date, price, body.available === false ? 0 : 1).run()
+  return json({ ok: true, roomId, date, price, available: body.available !== false }, 200, headers)
+}
+
+async function handleListRoomPrices(request, user, env, headers, roomId) {
+  const room = await env.DB.prepare("SELECT rooms.* FROM rooms JOIN hotels ON hotels.id = rooms.hotel_id WHERE rooms.id = ? AND (? = 'admin' OR hotels.id = ?)").bind(roomId, user.role, user.hotel_id).first()
+  if (!room) return json({ error: "Room not found." }, 404, headers)
+  const params = new URL(request.url).searchParams
+  const from = params.get("from") || new Date().toISOString().slice(0, 10)
+  const to = params.get("to") || "9999-12-31"
+  const { results } = await env.DB.prepare("SELECT stay_date AS date, price, available FROM room_prices WHERE room_id = ? AND stay_date BETWEEN ? AND ? ORDER BY stay_date").bind(roomId, from, to).all()
+  return json({ prices: results }, 200, headers)
+}
+
+async function handleListImages(user, request, env, headers) {
+  const hotel = await hotelForUser(user, env, new URL(request.url).searchParams.get("hotelId"))
+  if (!hotel) return json({ error: "Property not found." }, 404, headers)
+  const { results } = await env.DB.prepare("SELECT * FROM hotel_images WHERE hotel_id = ? ORDER BY position, created_at").bind(hotel.id).all()
+  return json({ images: results.map(imagePayload) }, 200, headers)
+}
+
+async function handleUploadImage(request, user, env, headers) {
+  const form = await request.formData()
+  const hotel = await hotelForUser(user, env, form.get("hotelId"))
+  const file = form.get("file")
+  if (!hotel || !(file instanceof File)) return json({ error: "Property and image file are required." }, 400, headers)
+  if (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024) return json({ error: "Upload an image smaller than 10 MB." }, 400, headers)
+  const imageId = uuid()
+  const extension = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg"
+  const objectKey = `properties/${hotel.id}/${imageId}.${extension}`
+  await env.PHOTOS.put(objectKey, file.stream(), { httpMetadata: { contentType: file.type } })
+  const position = Number(form.get("position") || 0)
+  await env.DB.prepare("INSERT INTO hotel_images (id, hotel_id, object_key, alt_text, position) VALUES (?, ?, ?, ?, ?)").bind(imageId, hotel.id, objectKey, String(form.get("altText") || hotel.name), position).run()
+  return json({ image: { id: imageId, hotelId: hotel.id, altText: String(form.get("altText") || hotel.name), position, url: `/api/portal/images/${imageId}` } }, 201, headers)
+}
+
+async function handleGetImage(request, env) {
+  const image = await env.DB.prepare("SELECT object_key FROM hotel_images WHERE id = ?").bind(new URL(request.url).pathname.split("/").pop()).first()
+  if (!image) return new Response("Not found", { status: 404 })
+  const object = await env.PHOTOS.get(image.object_key)
+  if (!object) return new Response("Not found", { status: 404 })
+  return new Response(object.body, { headers: { "Content-Type": object.httpMetadata?.contentType || "application/octet-stream", "Cache-Control": "public, max-age=31536000, immutable" } })
+}
+
+async function handleDeleteImage(request, user, env, headers) {
+  const imageId = new URL(request.url).pathname.split("/").pop()
+  const image = await env.DB.prepare("SELECT hotel_images.*, hotels.id AS hotel_id FROM hotel_images JOIN hotels ON hotels.id = hotel_images.hotel_id WHERE hotel_images.id = ? AND (? = 'admin' OR hotels.id = ?)").bind(imageId, user.role, user.hotel_id).first()
+  if (!image) return json({ error: "Image not found." }, 404, headers)
+  await env.PHOTOS.delete(image.object_key)
+  await env.DB.prepare("DELETE FROM hotel_images WHERE id = ?").bind(imageId).run()
+  return json({ ok: true }, 200, headers)
+}
+
 export default {
   async fetch(request, env) {
     const headers = cors(request, env)
@@ -173,14 +282,31 @@ export default {
       if (request.method === "POST" && path === "/auth/login") return handleLogin(request, env, headers)
       if (request.method === "GET" && path === "/auth/me") return handleMe(request, env, headers)
       if (request.method === "POST" && path === "/auth/logout") return handleLogout(request, env, headers)
+      if (request.method === "GET" && path.startsWith("/images/")) return handleGetImage(request, env)
       const user = await currentUser(request, env)
       if (!user) return json({ error: "Not signed in." }, 401, headers)
       if (path.startsWith("/admin/") && !requireRole(user, "admin")) return json({ error: "Admin access required." }, 403, headers)
       if (path.startsWith("/owner/") && !requireRole(user, "admin", "owner")) return json({ error: "Owner access required." }, 403, headers)
       if (request.method === "GET" && path === "/admin/hotels") return handleListHotels(env, headers)
       if (request.method === "POST" && path === "/admin/hotels") return handleCreateHotel(request, env, headers)
+      if (request.method === "GET" && path === "/admin/rooms") return handleListRooms(user, request, env, headers)
+      if (request.method === "POST" && path === "/admin/rooms") return handleCreateRoom(request, user, env, headers)
+      if (request.method === "PATCH" && path.startsWith("/admin/rooms/")) return handleUpdateRoom(request, user, env, headers, path.split("/").pop())
+      if (request.method === "GET" && path.startsWith("/admin/rooms/") && path.endsWith("/prices")) return handleListRoomPrices(request, user, env, headers, path.split("/")[3])
+      if (request.method === "POST" && path.startsWith("/admin/rooms/") && path.endsWith("/prices")) return handleRoomPrice(request, user, env, headers, path.split("/")[3])
+      if (request.method === "GET" && path === "/admin/images") return handleListImages(user, request, env, headers)
+      if (request.method === "POST" && path === "/admin/images") return handleUploadImage(request, user, env, headers)
+      if (request.method === "DELETE" && path.startsWith("/admin/images/")) return handleDeleteImage(request, user, env, headers)
       if (request.method === "GET" && path === "/owner/hotel") return handleOwnerHotel(user, env, headers)
       if (request.method === "PATCH" && path === "/owner/hotel") return handleUpdateOwnerHotel(request, user, env, headers)
+      if (request.method === "GET" && path === "/owner/rooms") return handleListRooms(user, request, env, headers)
+      if (request.method === "POST" && path === "/owner/rooms") return handleCreateRoom(request, user, env, headers)
+      if (request.method === "PATCH" && path.startsWith("/owner/rooms/")) return handleUpdateRoom(request, user, env, headers, path.split("/").pop())
+      if (request.method === "GET" && path.startsWith("/owner/rooms/") && path.endsWith("/prices")) return handleListRoomPrices(request, user, env, headers, path.split("/")[3])
+      if (request.method === "POST" && path.startsWith("/owner/rooms/") && path.endsWith("/prices")) return handleRoomPrice(request, user, env, headers, path.split("/")[3])
+      if (request.method === "GET" && path === "/owner/images") return handleListImages(user, request, env, headers)
+      if (request.method === "POST" && path === "/owner/images") return handleUploadImage(request, user, env, headers)
+      if (request.method === "DELETE" && path.startsWith("/owner/images/")) return handleDeleteImage(request, user, env, headers)
       return json({ error: "Not found." }, 404, headers)
     } catch (error) {
       console.error(error)

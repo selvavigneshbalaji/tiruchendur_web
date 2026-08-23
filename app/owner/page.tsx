@@ -1,8 +1,9 @@
 "use client"
 
+import Link from "next/link"
 import { FormEvent, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check, LogOut, RefreshCw, Save } from "lucide-react"
+import { Check, ImagePlus, LogOut, RefreshCw, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 type Hotel = {

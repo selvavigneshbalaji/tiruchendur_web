@@ -18,9 +18,12 @@
 - [x] Selected the Next.js same-origin proxy approach, so no Cloudflare DNS migration or `api.tiruchendurstay.in` custom domain is required. The site will forward `/api/portal/*` to the Worker and store the secure session cookie on its own domain.
 - [x] Set a long random one-time bootstrap secret interactively:
   `npx wrangler secret put BOOTSTRAP_TOKEN --config=cloudflare/wrangler.jsonc`
-- [ ] Call `POST /setup` once using the bootstrap token to create the first admin account, then remove/rotate the bootstrap secret.
+- [x] Call `POST /setup` once using the bootstrap token to create the first admin account, then remove/rotate the bootstrap secret.
 - [ ] Add custom domain `api.tiruchendurstay.in` if the main domain is managed in Cloudflare; update `APP_ORIGIN` and `COOKIE_DOMAIN` in `cloudflare/wrangler.jsonc` before redeploying.
 - [x] Build the `/admin` and `/owner` interfaces in the Next.js site and configure them with the Worker API URL through the same-origin `/api/portal/*` proxy.
+- [x] Add room records with base prices and active/inactive status.
+- [x] Add date-based room prices and availability controls.
+- [x] Add property photo upload, listing, and deletion through Cloudflare R2.
 
 ## Security rules
 - Never put Cloudflare API tokens, `BOOTSTRAP_TOKEN`, passwords, or production cookies in Git, `.env.example`, or browser-visible `NEXT_PUBLIC_*` secrets.
