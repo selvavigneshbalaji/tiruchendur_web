@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tiruchendur-stays-api",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-22",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tiruchendur-stays",
+      "database_id": "REPLACE_AFTER_CREATING_D1"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "PHOTOS",
+      "bucket_name": "tiruchendur-stays-photos"
+    }
+  ],
+  "vars": {
+    "APP_ORIGIN": "https://www.tiruchendurstay.in",
+    "COOKIE_DOMAIN": ".tiruchendurstay.in"
+  }
+}

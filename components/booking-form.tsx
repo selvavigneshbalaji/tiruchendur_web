@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { CalendarDays, Send, User, Phone, FileText, AlertCircle } from "lucide-react"
 import { getDisplayPrice, getPriceForDateRange, type Hotel } from "@/lib/hotels"
+import { normalizeDateValue } from "@/lib/utils"
 
 const WHATSAPP_NUMBER = "919688104147"
 
@@ -15,6 +16,17 @@ function formatDate(dateStr: string): string {
     month: "short",
     year: "numeric",
   })
+}
+
+function selectedTime(dateStr?: string): string {
+  return dateStr?.match(/T(\d{2}:\d{2})/)?.[1] || ""
+}
+
+function formatTime(time: string): string {
+  if (!time) return ""
+  const [hours, minutes] = time.split(":").map(Number)
+  const suffix = hours >= 12 ? "PM" : "AM"
+  return `${String(hours % 12 || 12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${suffix}`
 }
 
 function calculateNights(checkIn: string, checkOut: string): number {
@@ -74,6 +86,12 @@ export function BookingForm({
   }, [hotel, checkIn, checkOut, guests, perNightPrice])
 
   const hasDates = checkIn && checkOut
+  // The calendar stores the selected check-in/out time in the URL. Native
+  // date inputs only accept YYYY-MM-DD, so normalize before displaying them.
+  const checkInDateValue = normalizeDateValue(checkIn || "") || ""
+  const checkOutDateValue = normalizeDateValue(checkOut || "") || ""
+  const checkInTimeValue = selectedTime(checkIn)
+  const checkOutTimeValue = selectedTime(checkOut)
 
   const handleSendBooking = useCallback(() => {
     if (!canSubmit) return
@@ -84,7 +102,9 @@ export function BookingForm({
       `*Property:* ${hotel.name}`,
       `*Location:* ${hotel.area}`,
       checkIn ? `*Check-in:* ${formatDate(checkIn)}` : "",
+      checkInTimeValue ? `*Check-in time:* ${formatTime(checkInTimeValue)}` : "",
       checkOut ? `*Check-out:* ${formatDate(checkOut)}` : "",
+      checkOutTimeValue ? `*Check-out time:* ${formatTime(checkOutTimeValue)}` : "",
       nights > 0 ? `*Nights:* ${nights}` : "",
       `*Guests:* ${guests}`,
       `*Per Night:* ₹${perNightPrice.toLocaleString("en-IN")}`,
@@ -99,7 +119,7 @@ export function BookingForm({
 
     const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
     window.open(waUrl, "_blank")
-  }, [canSubmit, hotel, checkIn, checkOut, guests, nights, perNightPrice, totalPrice, name, phone, details])
+  }, [canSubmit, hotel, checkIn, checkOut, checkInTimeValue, checkOutTimeValue, guests, nights, perNightPrice, totalPrice, name, phone, details])
 
   return (
     <div className="rounded-3xl border border-border/70 bg-card p-6">
@@ -127,13 +147,13 @@ export function BookingForm({
           {hasDates && (
             <div className="flex justify-between text-muted-foreground">
               <span>Check-in</span>
-              <span className="font-medium text-foreground">{formatDate(checkIn!)}</span>
+              <span className="font-medium text-foreground">{formatDate(checkIn!)}{checkInTimeValue ? ` · ${formatTime(checkInTimeValue)}` : ""}</span>
             </div>
           )}
           {hasDates && (
             <div className="flex justify-between text-muted-foreground">
               <span>Check-out</span>
-              <span className="font-medium text-foreground">{formatDate(checkOut!)}</span>
+              <span className="font-medium text-foreground">{formatDate(checkOut!)}{checkOutTimeValue ? ` · ${formatTime(checkOutTimeValue)}` : ""}</span>
             </div>
           )}
           <div className="border-t border-border/70 pt-2 flex justify-between font-semibold text-foreground">
@@ -145,6 +165,7 @@ export function BookingForm({
 
       {/* Booking Form */}
       <div className="mt-5 space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="flex items-center gap-2 text-sm font-medium text-foreground">
             <User className="size-4 text-primary" />
@@ -198,7 +219,7 @@ export function BookingForm({
           </label>
           <input
             type="date"
-            value={checkIn || ""}
+            value={checkInDateValue}
             readOnly
             className="mt-1.5 w-full rounded-xl border border-border/50 bg-background/50 px-4 py-2.5 text-sm text-muted-foreground outline-none cursor-not-allowed"
           />
@@ -211,10 +232,38 @@ export function BookingForm({
           </label>
           <input
             type="date"
-            value={checkOut || ""}
+            value={checkOutDateValue}
             readOnly
             className="mt-1.5 w-full rounded-xl border border-border/50 bg-background/50 px-4 py-2.5 text-sm text-muted-foreground outline-none cursor-not-allowed"
           />
+        </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <CalendarDays className="size-4 text-primary" />
+              Check-in Time
+            </label>
+            <input
+              type="time"
+              value={checkInTimeValue}
+              readOnly
+              className="mt-1.5 w-full rounded-xl border border-border/50 bg-background/50 px-4 py-2.5 text-sm text-muted-foreground outline-none cursor-not-allowed"
+            />
+          </div>
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <CalendarDays className="size-4 text-primary" />
+              Check-out Time
+            </label>
+            <input
+              type="time"
+              value={checkOutTimeValue}
+              readOnly
+              className="mt-1.5 w-full rounded-xl border border-border/50 bg-background/50 px-4 py-2.5 text-sm text-muted-foreground outline-none cursor-not-allowed"
+            />
+          </div>
         </div>
 
         <div>

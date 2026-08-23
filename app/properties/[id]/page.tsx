@@ -3,11 +3,11 @@ export const revalidate = 60
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from 'next'
-import { ArrowLeft, CalendarDays, ExternalLink, MapPin, Phone, Star } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { getDisplayPrice, getHotels } from "@/lib/hotels"
+import { ArrowLeft, ExternalLink, MapPin, Star } from "lucide-react"
+import { getHotels } from "@/lib/hotels"
 import { BookingForm } from "@/components/booking-form"
 import { PropertyGallery } from "@/components/property-gallery"
+import { PropertyBookingControls } from "@/components/property-booking-controls"
 
 export async function generateStaticParams() {
   const hotels = await getHotels()
@@ -96,26 +96,7 @@ export default async function PropertyPage({ params, searchParams }: { params: P
                 </div>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-border/70 bg-background/70 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold text-foreground">From</div>
-                    <div className="mt-1 text-2xl font-bold text-foreground" data-testid="property-price">₹{getDisplayPrice(hotel, checkIn || '', guests).toLocaleString("en-IN")}</div>
-                  </div>
-                  <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">per night</div>
-                </div>
-
-                <div className="mt-4 flex gap-2">
-                  <Button className="flex-1 gap-2">
-                    <CalendarDays className="size-4" />
-                    Check dates
-                  </Button>
-                  <Button variant="outline" className="flex-1 gap-2">
-                    <Phone className="size-4" />
-                    Call host
-                  </Button>
-                </div>
-              </div>
+              <PropertyBookingControls hotel={hotel} initialCheckIn={checkIn} initialCheckOut={checkOut} initialGuests={guests} />
             </div>
           </div>
         </div>
