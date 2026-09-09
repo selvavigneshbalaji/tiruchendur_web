@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { CalendarDays, Send, User, Phone, FileText, AlertCircle } from "lucide-react"
-import { getDisplayPrice, getPriceForDateRange, type Hotel } from "@/lib/hotels"
+import { CalendarDays, Send, User, Phone, FileText, AlertCircle, MessageCircle } from "lucide-react"
+import { getDisplayPrice, getPriceForDateRange, normalizeWhatsAppNumber, type Hotel } from "@/lib/hotels"
 import { normalizeDateValue } from "@/lib/utils"
 
 const WHATSAPP_NUMBER = "919688104147"
@@ -85,6 +85,8 @@ export function BookingForm({
     return perNightPrice
   }, [hotel, checkIn, checkOut, guests, perNightPrice])
 
+  const hostWhatsAppNumber = useMemo(() => normalizeWhatsAppNumber(hotel.ownerContact || ""), [hotel.ownerContact])
+
   const hasDates = checkIn && checkOut
   // The calendar stores the selected check-in/out time in the URL. Native
   // date inputs only accept YYYY-MM-DD, so normalize before displaying them.
@@ -92,6 +94,17 @@ export function BookingForm({
   const checkOutDateValue = normalizeDateValue(checkOut || "") || ""
   const checkInTimeValue = selectedTime(checkIn)
   const checkOutTimeValue = selectedTime(checkOut)
+
+  const handleHostWhatsApp = useCallback(() => {
+    if (!hostWhatsAppNumber) return
+
+    const message = encodeURIComponent(
+      `Hi ${hotel.ownerName || "host"}, I would like to discuss about your property. Can we speak?`
+    )
+
+    const waUrl = `https://wa.me/${hostWhatsAppNumber}?text=${message}`
+    window.open(waUrl, "_blank")
+  }, [hostWhatsAppNumber, hotel.area, hotel.name, hotel.ownerName])
 
   const handleSendBooking = useCallback(() => {
     if (!canSubmit) return
@@ -278,6 +291,25 @@ export function BookingForm({
             rows={3}
             className="mt-1.5 w-full rounded-xl border border-border/50 bg-background px-4 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary resize-none"
           />
+        </div>
+
+        <div className="mt-2 flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/60 p-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <MessageCircle className="size-5" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Prefer to talk first? Message the host on WhatsApp.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleHostWhatsApp}
+            disabled={!hostWhatsAppNumber}
+            className="rounded-full bg-[#0b6b6b] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#095b5b] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            WhatsApp
+          </button>
         </div>
 
         <Button

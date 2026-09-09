@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,16 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/portal/auth/me", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() as Promise<{ user?: { role?: string } }> : null)
+      .then((data) => {
+        if (data?.user?.role === "admin") router.replace("/admin/dashboard")
+        if (data?.user?.role === "owner") router.replace("/owner")
+      })
+      .catch(() => undefined)
+  }, [router])
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

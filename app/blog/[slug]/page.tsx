@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { articles, type Article } from '../articles'
+import { getBlogPostBySlug, getAllBlogPosts } from '@/lib/blog-data'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const article = articles[slug]
+  const article = await getBlogPostBySlug(slug)
   if (!article) return {}
 
   return {
@@ -17,33 +17,39 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: article.title,
       description: article.description,
       publishedTime: article.publishedTime,
-      images: [{ url: '/images/temple-hero.png', width: 1200, height: 630, alt: 'Tiruchendur Murugan Temple by the sea' }],
+      images: [{ url: article.image || '/images/temple-hero.png', width: 1200, height: 630, alt: article.title }],
     },
   }
 }
 
-export function generateStaticParams() {
-  return Object.keys(articles).map((slug) => ({ slug }))
+export async function generateStaticParams() {
+  const posts = await getAllBlogPosts()
+  return posts.map((post) => ({ slug: post.slug }))
 }
 
 export default async function BlogArticle({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const article = articles[slug]
+  const article = await getBlogPostBySlug(slug)
   if (!article) notFound()
 
   return (
     <main className="min-h-screen bg-background px-4 py-12 sm:px-6 lg:py-20">
       <article className="mx-auto max-w-3xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center text-sm font-medium text-primary hover:underline">← Browse Tiruchendur stays</Link>
+          <Link href="/blog" className="inline-flex items-center text-sm font-medium text-primary hover:underline">← Back to blog</Link>
           <Link href="/" className="inline-flex rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Browse stays</Link>
         </div>
+        {article.image && (
+          <div className="mt-8 overflow-hidden rounded-3xl border border-border bg-card">
+            <img src={article.image} alt={article.title} className="h-64 w-full object-cover sm:h-80" />
+          </div>
+        )}
         <p className="mt-10 text-sm font-semibold uppercase tracking-widest text-primary">Tiruchendur travel guide</p>
         <h1 className="mt-3 font-serif text-4xl font-semibold leading-tight text-foreground sm:text-5xl">{article.title}</h1>
         <p className="mt-6 text-lg leading-8 text-muted-foreground">{article.intro}</p>
         <div className="mt-10 space-y-10">
           {article.sections.map((section) => (
-            <section key={section.heading}>
+            <section key={section.heading || section.paragraphs[0]}>
               <h2 className="font-serif text-2xl font-semibold text-foreground">{section.heading}</h2>
               {section.paragraphs.map((paragraph) => (
                 <p key={paragraph} className="mt-4 leading-7 text-muted-foreground">{paragraph}</p>

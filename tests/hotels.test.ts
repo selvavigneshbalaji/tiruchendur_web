@@ -1,7 +1,7 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { getDisplayPrice, getPriceForDate, getPriceForDateRange, getPriceForNextAvailableDate, isAvailableForRange, matchesDestination, normalizeSheetCsvUrl, parseHotelsPayload, toHotel, type Hotel } from '../lib/hotels'
+import { getDisplayPrice, getPriceForDate, getPriceForDateRange, getPriceForNextAvailableDate, isAvailableForRange, matchesDestination, normalizeSheetCsvUrl, normalizeWhatsAppNumber, parseHotelsPayload, toHotel, type Hotel } from '../lib/hotels'
 
 describe('isAvailableForRange', () => {
   it('parses datetime values from the homepage search flow', () => {
@@ -72,6 +72,14 @@ describe('normalizeSheetCsvUrl', () => {
       normalizeSheetCsvUrl('https://docs.google.com/spreadsheets/d/e/abc/pub?gid=123'),
       'https://docs.google.com/spreadsheets/d/e/abc/pub?gid=123&output=csv'
     )
+  })
+})
+
+describe('normalizeWhatsAppNumber', () => {
+  it('keeps valid whatsapp numbers in the whatsapp-ready format', () => {
+    assert.equal(normalizeWhatsAppNumber('+91 96881 04147'), '919688104147')
+    assert.equal(normalizeWhatsAppNumber('9688104147'), '919688104147')
+    assert.equal(normalizeWhatsAppNumber('919688104147'), '919688104147')
   })
 })
 
