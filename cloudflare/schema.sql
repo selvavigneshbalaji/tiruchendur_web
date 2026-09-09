@@ -102,6 +102,20 @@ CREATE TABLE IF NOT EXISTS sessions (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  description TEXT NOT NULL DEFAULT '',
+  published_time TEXT NOT NULL DEFAULT (date('now')),
+  intro TEXT NOT NULL DEFAULT '',
+  image TEXT NOT NULL DEFAULT '',
+  sections TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS availability_by_date ON availability(stay_date);
 CREATE INDEX IF NOT EXISTS bookings_by_hotel ON bookings(hotel_id, check_in);
 CREATE INDEX IF NOT EXISTS sessions_by_expiry ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS blog_posts_by_published ON blog_posts(published_time DESC);

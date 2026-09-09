@@ -3,89 +3,23 @@
 import Link from "next/link"
 import { FormEvent, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check, ImagePlus, LogOut, RefreshCw, Save } from "lucide-react"
+import { ImagePlus, LogOut, RefreshCw, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-type Hotel = {
-  id: string
-  name: string
-  area: string
-  description: string
-  category: string
-  price: number
-  maxGuests: number
-  ownerName: string
-  ownerContact: string
-}
-
+type Hotel = { id: string; name: string; area: string; description: string; category: string; price: number; maxGuests: number; ownerName: string; ownerContact: string; status: "draft" | "published" }
 type FormState = Omit<Hotel, "id">
 
-async function readJson<T>(response: Response) {
-  return response.json().catch(() => ({})) as Promise<T>
-}
+async function readJson<T>(response: Response) { return response.json().catch(() => ({})) as Promise<T> }
+function toForm(hotel: Hotel): FormState { return { name: hotel.name, area: hotel.area, description: hotel.description, category: hotel.category, price: hotel.price, maxGuests: hotel.maxGuests, ownerName: hotel.ownerName, ownerContact: hotel.ownerContact, status: hotel.status } }
 
 export default function OwnerPage() {
-  const router = useRouter()
-  const [hotel, setHotel] = useState<Hotel | null>(null)
-  const [form, setForm] = useState<FormState | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
-
-  async function loadHotel() {
-    setLoading(true)
-    setError("")
-    const response = await fetch("/api/portal/owner/hotel", { cache: "no-store" })
-    const data = await readJson<{ hotel?: Hotel; error?: string }>(response)
-    if (response.status === 401) {
-      router.replace("/admin")
-      return
-    }
-    if (!response.ok || !data.hotel) setError(data.error || "Could not load your property.")
-    else {
-      setHotel(data.hotel)
-      setForm({ name: data.hotel.name, area: data.hotel.area, description: data.hotel.description, category: data.hotel.category, price: data.hotel.price, maxGuests: data.hotel.maxGuests, ownerName: data.hotel.ownerName, ownerContact: data.hotel.ownerContact })
-    }
-    setLoading(false)
-  }
-
+  const router = useRouter(); const [hotel, setHotel] = useState<Hotel | null>(null); const [form, setForm] = useState<FormState | null>(null); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false); const [message, setMessage] = useState(""); const [error, setError] = useState("")
+  async function loadHotel() { setLoading(true); setError(""); const response = await fetch("/api/portal/owner/hotel", { cache: "no-store" }); const data = await readJson<{ hotel?: Hotel; error?: string }>(response); if (response.status === 401) { router.replace("/admin"); return } if (!response.ok || !data.hotel) setError(data.error || "Could not load your property."); else { setHotel(data.hotel); setForm(toForm(data.hotel)) } setLoading(false) }
   useEffect(() => { void loadHotel() }, [])
+  function updateForm(field: keyof FormState, value: string | number) { setForm((current) => current ? { ...current, [field]: value } : current); setMessage("") }
+  async function saveHotel(event: FormEvent<HTMLFormElement>) { event.preventDefault(); if (!form) return; setSaving(true); setError(""); setMessage(""); const response = await fetch("/api/portal/owner/hotel", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) }); const data = await readJson<{ hotel?: Hotel; error?: string }>(response); if (!response.ok || !data.hotel) setError(data.error || "Could not save your property."); else { setHotel(data.hotel); setForm(toForm(data.hotel)); setMessage("Property details saved.") } setSaving(false) }
+  async function logout() { await fetch("/api/portal/auth/logout", { method: "POST" }); router.replace("/admin") }
 
-  function updateForm(field: keyof FormState, value: string | number) {
-    setForm((current) => current ? { ...current, [field]: value } : current)
-    setMessage("")
-  }
-
-  async function saveHotel(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!form) return
-    setSaving(true)
-    setError("")
-    setMessage("")
-    const response = await fetch("/api/portal/owner/hotel", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) })
-    const data = await readJson<{ hotel?: Hotel; error?: string }>(response)
-    if (response.status === 401) {
-      router.replace("/admin")
-      return
-    }
-    if (!response.ok || !data.hotel) setError(data.error || "Could not save your property.")
-    else {
-      setHotel(data.hotel)
-      setForm({ name: data.hotel.name, area: data.hotel.area, description: data.hotel.description, category: data.hotel.category, price: data.hotel.price, maxGuests: data.hotel.maxGuests, ownerName: data.hotel.ownerName, ownerContact: data.hotel.ownerContact })
-      setMessage("Property details saved.")
-    }
-    setSaving(false)
-  }
-
-  async function logout() {
-    await fetch("/api/portal/auth/logout", { method: "POST" })
-    router.replace("/admin")
-  }
-
-  return <main className="min-h-screen bg-background"><header className="border-b border-border bg-card"><div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-5 sm:px-6"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Tiruchendur Stays</p><h1 className="mt-1 font-serif text-2xl font-semibold">Owner portal</h1></div><Button variant="outline" onClick={logout}><LogOut /> Sign out</Button></div></header><div className="mx-auto max-w-4xl px-4 py-8 sm:px-6"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm text-muted-foreground">Keep your public property information up to date.</p><h2 className="mt-1 text-xl font-semibold">Property details</h2></div><Button variant="outline" onClick={() => void loadHotel()} disabled={loading}><RefreshCw /> Refresh</Button></div>{message && <p className="mt-5 flex items-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground"><Check className="size-4" />{message}</p>}{error && <p className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</p>}{loading ? <p className="mt-6 rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">Loading property...</p> : form && hotel && <form onSubmit={saveHotel} className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7"><div className="grid gap-4 sm:grid-cols-2"><Field label="Property name" value={form.name} onChange={(value) => updateForm("name", value)} required /><Field label="Area" value={form.area} onChange={(value) => updateForm("area", value)} required /><Field label="Category" value={form.category} onChange={(value) => updateForm("category", value)} required /><Field label="Starting price (INR)" type="number" min="0" value={form.price} onChange={(value) => updateForm("price", Number(value))} required /><Field label="Maximum guests" type="number" min="1" value={form.maxGuests} onChange={(value) => updateForm("maxGuests", Number(value))} required /><Field label="Owner name" value={form.ownerName} onChange={(value) => updateForm("ownerName", value)} required /><Field label="Owner contact" value={form.ownerContact} onChange={(value) => updateForm("ownerContact", value)} required /><label className="block text-sm font-medium sm:col-span-2">Description<textarea value={form.description} onChange={(event) => updateForm("description", event.target.value)} rows={6} className="mt-1.5 w-full rounded-xl border border-input bg-background px-3 py-2 outline-none focus:border-primary" /></label></div><div className="mt-6 flex justify-end"><Button type="submit" disabled={saving}><Save /> {saving ? "Saving..." : "Save changes"}</Button></div></form>}</div></main>
+  return <main className="min-h-screen bg-background"><header className="border-b border-border bg-card"><div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-5 sm:px-6"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Tiruchendur Stays</p><h1 className="mt-1 font-serif text-2xl font-semibold">Owner portal</h1></div><Button type="button" variant="outline" onClick={logout}><LogOut /> Sign out</Button></div></header><div className="mx-auto max-w-4xl px-4 py-8 sm:px-6"><div className="flex flex-wrap gap-2"><Link href="/owner/rooms" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted"><ImagePlus /> Rooms, photos & calendar</Link>{hotel && <Link href={`/properties/${hotel.id}`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted">View property</Link>}<Button type="button" variant="outline" onClick={() => void loadHotel()} disabled={loading}><RefreshCw /> Refresh</Button></div><div className="mt-5"><p className="text-sm text-muted-foreground">Keep your public property information up to date.</p><h2 className="mt-1 text-xl font-semibold">Property details</h2></div>{message && <p className="mt-5 rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground">{message}</p>}{error && <p className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</p>}{loading ? <p className="mt-6 rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">Loading property...</p> : form && hotel && <form onSubmit={saveHotel} className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7"><div className="grid gap-4 sm:grid-cols-2"><Field label="Property name" value={form.name} onChange={(value) => updateForm("name", value)} required /><Field label="Area" value={form.area} onChange={(value) => updateForm("area", value)} required /><Field label="Category" value={form.category} onChange={(value) => updateForm("category", value)} required /><Field label="Starting price (INR)" type="number" min="0" value={form.price} onChange={(value) => updateForm("price", Number(value))} required /><Field label="Maximum guests" type="number" min="1" value={form.maxGuests} onChange={(value) => updateForm("maxGuests", Number(value))} required /><Field label="Owner name" value={form.ownerName} onChange={(value) => updateForm("ownerName", value)} required /><Field label="Owner contact" value={form.ownerContact} onChange={(value) => updateForm("ownerContact", value)} required /><label className="block text-sm font-medium">Listing status<select value={form.status} onChange={(event) => updateForm("status", event.target.value as FormState["status"])} className="mt-1.5 h-11 w-full rounded-xl border border-input bg-background px-3"><option value="draft">Draft</option><option value="published">Published / Live</option></select></label><label className="block text-sm font-medium sm:col-span-2">Description<textarea value={form.description} onChange={(event) => updateForm("description", event.target.value)} rows={6} className="mt-1.5 w-full rounded-xl border border-input bg-background px-3 py-2 outline-none focus:border-primary" /></label></div><div className="mt-6 flex justify-end"><Button type="submit" disabled={saving}><Save /> {saving ? "Saving..." : "Save changes"}</Button></div></form>}</div></main>
 }
-
-function Field({ label, value, onChange, type = "text", ...props }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; [key: string]: unknown }) {
-  return <label className="block text-sm font-medium">{label}<input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-input bg-background px-3 outline-none focus:border-primary" {...props} /></label>
-}
+function Field({ label, value, onChange, type = "text", ...props }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; [key: string]: unknown }) { return <label className="block text-sm font-medium">{label}<input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-input bg-background px-3 outline-none focus:border-primary" {...props} /></label> }

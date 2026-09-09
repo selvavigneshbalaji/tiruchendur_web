@@ -3,6 +3,7 @@ export type Article = {
   description: string
   publishedTime: string
   intro: string
+  image?: string
   sections: { heading: string; paragraphs: string[] }[]
 }
 

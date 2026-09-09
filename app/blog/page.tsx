@@ -1,7 +1,9 @@
 import Link from 'next/link'
-import { articles } from './articles'
+import { getAllBlogPosts, type BlogPost } from '@/lib/blog-data'
 
-export default function BlogIndex() {
+export default async function BlogIndex() {
+  const posts = await getAllBlogPosts()
+
   return (
     <main className="min-h-screen bg-background px-4 py-12 sm:px-6 lg:py-20">
       <div className="mx-auto max-w-4xl">
@@ -16,14 +18,14 @@ export default function BlogIndex() {
           </Link>
         </div>
         <div className="mt-12 space-y-8">
-          {Object.entries(articles).map(([slug, article]) => (
-            <article key={slug} className="rounded-3xl border border-border bg-card p-8">
-              <Link href={`/blog/${slug}`} className="text-2xl font-semibold text-foreground hover:text-primary">
+          {posts.map((article) => (
+            <article key={article.slug} className="rounded-3xl border border-border bg-card p-8">
+              <Link href={`/blog/${article.slug}`} className="text-2xl font-semibold text-foreground hover:text-primary">
                 {article.title}
               </Link>
               <p className="mt-4 text-muted-foreground">{article.description}</p>
               <p className="mt-4 text-sm uppercase tracking-wide text-primary">Published {article.publishedTime}</p>
-              <Link href={`/blog/${slug}`} className="mt-6 inline-flex rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90">
+              <Link href={`/blog/${article.slug}`} className="mt-6 inline-flex rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90">
                 Read article
               </Link>
             </article>

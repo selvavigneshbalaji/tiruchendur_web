@@ -31,6 +31,21 @@ import { normalizeDateValue } from './utils'
 
 const SHEET_CSV_URL = process.env.GOOGLE_SHEETS_CSV_URL || ''
 const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL || ''
+const PORTAL_WORKER_URL = (process.env.PORTAL_WORKER_URL || 'https://tiruchendur-stays-api.tiruchendur-stays-api.workers.dev').replace(/\/$/, '')
+
+async function getPortalHotels(): Promise<Hotel[]> {
+  try {
+    const response = await fetch(`${PORTAL_WORKER_URL}/hotels`, { cache: 'no-store' })
+    if (!response.ok) return []
+    const data = await response.json() as { hotels?: Array<{ id: string; name: string; area: string; description: string; category: string; price: number; maxGuests: number; ownerName: string; ownerContact: string; images?: Array<{ url: string }> }> }
+    return (data.hotels || []).map((hotel) => ({
+      ...hotel, image: hotel.images?.[0]?.url || '/images/temple-hero.png', images: hotel.images?.map((image) => image.url) || [], rating: 0, reviews: 0, tags: [],
+      distance: 'Near Tiruchendur', rules: ['Check-in and check-out times are confirmed by the property.'],
+    }))
+  } catch {
+    return []
+  }
+}
 
 export async function debugFetchAppsScriptResponse() {
   if (!APPS_SCRIPT_URL) return { ok: false, reason: 'APPS_SCRIPT_URL is not configured' }
@@ -424,6 +439,19 @@ export function toHotel(row: Record<string, unknown>): Hotel {
   }
 }
 
+export function normalizeWhatsAppNumber(value: string): string {
+  if (!value) return ''
+
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return ''
+
+  if (/^\d{10}$/.test(digits)) return `91${digits}`
+  if (/^\d{12}$/.test(digits) && digits.startsWith('91')) return digits
+  if (/^\d{13}$/.test(digits) && digits.startsWith('091')) return digits.replace(/^0/, '')
+
+  return digits
+}
+
 export function matchesDestination(hotel: Pick<Hotel, 'area' | 'name' | 'description'>, searchText: string): boolean {
   const normalizedSearch = searchText
     .toLowerCase()
@@ -523,6 +551,7 @@ export function getPriceForDateRange(hotel: Hotel, checkIn: string, checkOut: st
 }
 
 export async function getHotels(): Promise<Hotel[]> {
+  const portalHotels = await getPortalHotels()
   if (APPS_SCRIPT_URL) {
     try {
       const res = await fetch(APPS_SCRIPT_URL, {
@@ -537,7 +566,7 @@ export async function getHotels(): Promise<Hotel[]> {
         const rows = parseHotelsPayload(payload)
         if (rows.length) {
           const hotelsFromResponse = rows.map(toHotel)
-          return hotelsFromResponse
+          return [...portalHotels, ...hotelsFromResponse.filter((hotel) => !portalHotels.some((portalHotel) => portalHotel.id === hotel.id))]
         }
       }
       Sentry.captureMessage('Hotel data source returned an unsuccessful response', {
@@ -554,7 +583,7 @@ export async function getHotels(): Promise<Hotel[]> {
 
   const normalizedUrl = normalizeSheetCsvUrl(SHEET_CSV_URL)
   if (!normalizedUrl || !isCsvUrl(normalizedUrl)) {
-    return fallbackHotels
+    return [...portalHotels, ...fallbackHotels]
   }
 
   try {
@@ -566,21 +595,21 @@ export async function getHotels(): Promise<Hotel[]> {
     })
 
     if (!res.ok) {
-      return fallbackHotels
+      return [...portalHotels, ...fallbackHotels]
     }
 
     const csv = await res.text()
     const rows = parseHotelsPayload(csv)
     if (!rows.length) {
-      return fallbackHotels
+      return [...portalHotels, ...fallbackHotels]
     }
 
-    return rows.map(toHotel)
+    return [...portalHotels, ...rows.map(toHotel).filter((hotel) => !portalHotels.some((portalHotel) => portalHotel.id === hotel.id))]
   } catch (error) {
     Sentry.captureException(error, {
       tags: { provider: 'google-sheets', operation: 'get-hotels' },
     })
-    return fallbackHotels
+    return [...portalHotels, ...fallbackHotels]
   }
 }
 

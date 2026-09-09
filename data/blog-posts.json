@@ -1,0 +1,18 @@
+[
+  {
+    "slug": "tiruchendur-bus-timings",
+    "title": "Tiruchendur bus",
+    "description": "Tiruchendur bus",
+    "publishedTime": "2026-09-01",
+    "intro": "bus timing intro",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNXeuwtD6xCzSS8bN1Q8STGZTGyL_kQAeji4VhAWWkyw&s=10",
+    "sections": [
+      {
+        "heading": "bus",
+        "paragraphs": [
+          "11 -12"
+        ]
+      }
+    ]
+  }
+]

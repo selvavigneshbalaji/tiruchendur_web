@@ -1,13 +1,34 @@
 export const revalidate = 60
+export const dynamicParams = true
+export const dynamic = 'force-dynamic'
 
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from 'next'
 import { ArrowLeft, ExternalLink, MapPin, Star } from "lucide-react"
-import { getHotels } from "@/lib/hotels"
+import { getHotels, type Hotel } from "@/lib/hotels"
 import { BookingForm } from "@/components/booking-form"
 import { PropertyGallery } from "@/components/property-gallery"
 import { PropertyBookingControls } from "@/components/property-booking-controls"
+
+const workerUrl = (process.env.PORTAL_WORKER_URL || 'https://tiruchendur-stays-api.tiruchendur-stays-api.workers.dev').replace(/\/$/, '')
+
+async function getPortalHotel(id: string): Promise<Hotel | null> {
+  try {
+    const response = await fetch(`${workerUrl}/hotels/${encodeURIComponent(id)}`, { cache: 'no-store' })
+    if (!response.ok) return null
+    const data = await response.json() as { hotel?: { id: string; name: string; area: string; description: string; category: string; price: number; maxGuests: number; ownerName: string; ownerContact: string; images?: Array<{ url: string }> } }
+    if (!data.hotel) return null
+    return {
+      ...data.hotel,
+      image: data.hotel.images?.[0]?.url || '/images/temple-hero.png', images: data.hotel.images?.map((image) => image.url) || [], rating: 0, reviews: 0, tags: [], distance: 'Near Tiruchendur',
+      googleMapsUrl: undefined,
+      rules: ['Check-in and check-out times are confirmed by the property.'],
+    }
+  } catch {
+    return null
+  }
+}
 
 export async function generateStaticParams() {
   const hotels = await getHotels()
@@ -24,12 +45,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title, description, alternates: { canonical: `/properties/${hotel.id}` }, openGraph: { title: `${hotel.name} — ${hotel.category} stay in Tiruchendur`, description, images: [{ url: hotel.image, alt: hotel.name }] } }
 }
 
-export default async function PropertyPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ checkIn?: string; checkOut?: string; guests?: string }> }) {
+export default async function PropertyPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ checkIn?: string; checkOut?: string; guests?: string; from?: string }> }) {
   const { id } = await params
-  const { checkIn, checkOut, guests: guestsParam } = await searchParams
+  const { checkIn, checkOut, guests: guestsParam, from } = await searchParams
   const hotels = await getHotels()
 
-  const hotel = hotels.find((item) => item.id === id)
+  const hotel = hotels.find((item) => item.id === id) || await getPortalHotel(id)
   if (!hotel) notFound()
 
   const galleryImages = Array.from(new Set([hotel.image, ...(hotel.images || [])].filter(Boolean)))
@@ -38,15 +59,19 @@ export default async function PropertyPage({ params, searchParams }: { params: P
   if (checkIn) backParams.set('checkIn', checkIn)
   if (checkOut) backParams.set('checkOut', checkOut)
   if (guestsParam) backParams.set('guests', String(guests))
-  const backHref = backParams.toString() ? `/?${backParams.toString()}` : '/'
+  const fromAdmin = from === 'admin'
+  const backHref = fromAdmin ? '/admin/dashboard' : (backParams.toString() ? `/?${backParams.toString()}` : '/')
 
   return (
     <main className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex flex-wrap items-center gap-4">
         <Link href={backHref} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
           <ArrowLeft className="size-4" />
-          Back to stays
+          {fromAdmin ? 'Back to dashboard' : 'Back to stays'}
         </Link>
+        {fromAdmin && <Link href="/admin/dashboard" className="text-sm font-medium text-primary transition-colors hover:text-primary/80">Admin dashboard</Link>}
+        </div>
 
         <div className="mt-6 overflow-hidden rounded-[32px] border border-border/70 bg-card shadow-xl">
           <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">

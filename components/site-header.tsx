@@ -10,6 +10,7 @@ const navLinks = [
   { label: "Blog", href: "/blog" },
   { label: "Why us", href: "#why" },
   { label: "Reviews", href: "#reviews" },
+  { label: "Admin portal", href: "/admin" },
 ]
 
 export function SiteHeader() {
