@@ -261,7 +261,18 @@ async function handleUpdateBlogPost(request, user, env, headers) {
   const slug = String(body.slug || "").trim()
   if (!slug) return json({ error: "Blog slug is required." }, 400, headers)
   const existing = await env.DB.prepare("SELECT * FROM blog_posts WHERE slug = ?").bind(slug).first()
-  if (!existing) return json({ error: "Blog not found." }, 404, headers)
+  // Default site articles live in the app until an admin edits one. On its
+  // first edit, create its D1 copy; subsequent edits update that same record.
+  if (!existing) {
+    const createHeaders = new Headers(request.headers)
+    createHeaders.delete("content-length")
+    createHeaders.set("content-type", "application/json")
+    return handleCreateBlogPost(new Request(request.url, {
+      method: "POST",
+      headers: createHeaders,
+      body: JSON.stringify(body),
+    }), user, env, headers)
+  }
   const title = String(body.title || existing.title).trim()
   const nextSlug = slugify(String(body.slug || existing.slug || title || "untitled"))
   const sections = Array.isArray(body.sections) ? body.sections : JSON.parse(existing.sections || "[]")
