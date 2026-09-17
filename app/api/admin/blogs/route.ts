@@ -21,10 +21,15 @@ async function proxyBlogRequest(request: NextRequest) {
   if (cookie) headers.set("cookie", cookie)
   if (contentType) headers.set("content-type", contentType)
 
+  // Forward a buffered payload rather than Next's request stream. Node's fetch
+  // requires special stream handling, which caused POST requests to fail before
+  // reaching the Cloudflare Worker.
+  const body = ["GET", "HEAD"].includes(request.method) ? undefined : await request.text()
+
   const upstream = await fetch(url, {
     method: request.method,
     headers,
-    body: ["GET", "HEAD"].includes(request.method) ? undefined : request.body,
+    body,
   })
 
   return new NextResponse(upstream.body, {
