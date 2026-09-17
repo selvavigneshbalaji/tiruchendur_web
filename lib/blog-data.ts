@@ -15,10 +15,14 @@ export const defaultBlogPosts: BlogPost[] = Object.entries(defaultArticles).map(
 
 export async function fetchBlogPosts(): Promise<BlogPost[]> {
   try {
-    const response = await fetch("/api/admin/blogs", { cache: "no-store" })
+    const workerUrl = (process.env.PORTAL_WORKER_URL || "https://tiruchendur-stays-api.tiruchendur-stays-api.workers.dev").replace(/\/$/, "")
+    const url = typeof window === "undefined" ? `${workerUrl}/admin/blogs` : "/api/admin/blogs"
+    const response = await fetch(url, { cache: "no-store" })
     if (!response.ok) return defaultBlogPosts
     const data = await response.json() as { posts?: BlogPost[] }
-    return data.posts?.length ? data.posts : defaultBlogPosts
+    const merged = new Map(defaultBlogPosts.map((post) => [post.slug, post]))
+    for (const post of data.posts || []) merged.set(post.slug, post)
+    return Array.from(merged.values()).sort((a, b) => new Date(b.publishedTime).getTime() - new Date(a.publishedTime).getTime())
   } catch {
     return defaultBlogPosts
   }
